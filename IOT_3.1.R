@@ -236,8 +236,6 @@ library(ggplot2)
 scatterplot3d(PowerConsumption_byday$Global_active_power_wh, PowerConsumption_byday$Global_reactive_power_wh)
 qplot(PowerConsumption_byday$Global_active_power_wh, PowerConsumption_byday$Global_reactive_power_wh, col="orange")
 qplot(PowerConsumption_byday$Global_Sub_meter, PowerConsumption_byday$Global_active_power_wh, col="orange")
-ggplot(PowerConsumption_byday, aes(x=Date, y=Weight, fill=Cultivar)) +
-  geom_bar(position="dodge")
 str(PowerConsumption_byday)
 str(PowerConsumption)
 
@@ -249,15 +247,15 @@ summary(PowerConsumption_byday)
 #? summarise
 
 #8.1.1 Plot subsample
-plot(PowerConsumption_byday)
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_Sub_meter)
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_power_wh)
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_active_power_wh)
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_reactive_power_wh)
+qplot(PowerConsumption_byday)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_Sub_meter)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_power_wh)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_active_power_wh)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_reactive_power_wh)
 
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_1)
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_2)
-plot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_3)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_1)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_2)
+qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_3)
 
 ##8.1 Create a subsample of the dataset - consumption_by_type_of_day
 PowerConsumption %>%
