@@ -50,7 +50,8 @@ PowerConsumption <- PowerConsumption[,c(ncol(PowerConsumption), 1:(ncol(PowerCon
 
 #### 4. Change data types - date and time ####
 ## 4.1 DateTime
-PowerConsumption$DateTime <- strptime(PowerConsumption$DateTime, "%d/%m/%Y %H:%M:%S", tz = "Europe/Paris")
+library(lubridate)
+PowerConsumption$DateTime <- strptime(PowerConsumption$DateTime, "%d/%m/%Y %H:%M:%S")
 str(PowerConsumption)
 
 ## 4.2 Date
@@ -64,9 +65,22 @@ PowerConsumption$Time <- hms(PowerConsumption$Time)
 summary(PowerConsumption)
 
 #5.1 Global_apparent_power
-PowerConsumption$Global_apparent_power=sqrt((PowerConsumption$Global_active_power^2)+(PowerConsumption$Global_reactive_power^2))
+#PowerConsumption$Global_apparent_power=sqrt((PowerConsumption$Global_active_power^2)+(PowerConsumption$Global_reactive_power^2))
+#str(PowerConsumption)
+#PowerConsumption[1,]
+
+# 5.1 Global_power
+PowerConsumption$Global_power=(PowerConsumption$Global_active_power+ PowerConsumption$Global_reactive_power)
 str(PowerConsumption)
-PowerConsumption[1,]
+
+#5.1.1 Global power in watt hour 
+PowerConsumption$Global_power_wh = PowerConsumption$Global_power*1000/60
+
+#5.1.2 Global active power in watt hour 
+PowerConsumption$Global_active_power_wh = PowerConsumption$Global_active_power*1000/60
+
+#5.1.3 Global reactive power in watt hour
+PowerConsumption$Global_reactive_power_wh = PowerConsumption$Global_reactive_power*1000/60
 
 #5.2 Total_Sub_metering
 PowerConsumption$Global_Sub_metering <- PowerConsumption$Sub_metering_1 + PowerConsumption$Sub_metering_2 +PowerConsumption$Sub_metering_3
@@ -75,10 +89,11 @@ str(PowerConsumption)
 #5.3 Hour
 substr(PowerConsumption[1,]$Time, 1,2)
 PowerConsumption$Hour <- substr(PowerConsumption$Time, 1,2)
-str(PowerConsumption)
+str(PowerConsumption$Hour)
 
 PowerConsumption$Hour<-as.numeric(PowerConsumption$Hour)
 is.numeric(PowerConsumption$Hour)
+str(PowerConsumption)
 
 #5.4 No_Sub_metering_Energy
 PowerConsumption$No_Sub_metering_Energy<- PowerConsumption$Global_active_power*1000/60 - (PowerConsumption$Sub_metering_1 + PowerConsumption$Sub_metering_2 +PowerConsumption$Sub_metering_3)
@@ -104,6 +119,8 @@ PowerConsumption$Period_of_day <- as.factor(PowerConsumption$Period_of_day)
 
 
 #5.6 Season of the year 
+str(PowerConsumption$DateTime)
+
 PowerConsumption$Year <- substr(PowerConsumption$DateTime,1,4) 
 str(PowerConsumption)
 summary(PowerConsumption$Year)
@@ -178,31 +195,86 @@ sum(is.na(PowerConsumption))
 which(is.na(PowerConsumption))
 ### P: Starting in 141637
 
+library(dplyr)                   
+library(lubridate) 
+
+select(PowerConsumption, PowerConsumption$Sub_metering_1 == "NA") 
+#### E: Column `Time` classes Period and Interval from lubridate are currently not supported.
+str(PowerConsumption)
+summary(PowerConsumption)
+glimpse(PowerConsumption)
+
+PowerConsumption %>% filter(is.na(Sub_metering_1))
+#### E: Column `Time` classes Period and Interval from lubridate are currently not supported.
+
+str(PowerConsumption_double)
+summary(PowerConsumption_double)
+PowerConsumption_double %>% filter(is.na(Sub_metering_1))
+### C: 4 NA in Dec 16, day 21 and 30 / 2006 - 2 min // 2 min in jan/2007, day 14 and 28 // 2 min in fev/ 2007, day 22 // 1 min in march/2007, day 25 // day 28/ 04 from 00:21...
+
+PowerConsumption_double %>% filter(is.na(Sub_metering_2))
+PowerConsumption_double %>% filter(is.na(Sub_metering_3))
+PowerConsumption_double %>% filter(is.na(Global_active_power))
+PowerConsumption_double %>% filter(is.na(Voltage))
+### C: same NAs
 
 #### 7. Deal with timezone ####
-# France
+tz(PowerConsumption_double)
+tz(PowerConsumption)
+### C: UTC 
+
+#France
 #PowerConsumption$DateTime = as.POSIXct(PowerConsumption$DateTime,tz="Europe/Paris")
-#summary(PowerConsumption)
-#str(PowerConsumption)
-
-#PowerConsumption$DateTime = as.POSIXlt(PowerConsumption$DateTime,tz="Europe/Paris")
-#summary(PowerConsumption)
-#str(PowerConsumption)
-#PowerConsumption[1,]
-
-#Sys.timezone(location = TRUE)
-
-#install.packages("lubridate")
-library(lubridate)
-#force_tz(PowerConsumption, "Europe/Paris")
-### E: Nothing happened
-
 #PowerConsumption$TimeZone <- ymd_hms(PowerConsumption$DateTime, tz = "Europe/Paris")
-#str(PowerConsumption)
-
 
 #### 8. Exploration ####
+str(PowerConsumption)
+head(PowerConsumption)
+
+library(scatterplot3d)
+library(ggplot2)
+scatterplot3d(PowerConsumption_byday$Global_active_power_wh, PowerConsumption_byday$Global_reactive_power_wh)
+qplot(PowerConsumption_byday$Global_active_power_wh, PowerConsumption_byday$Global_reactive_power_wh, col="orange")
+qplot(PowerConsumption_byday$Global_Sub_meter, PowerConsumption_byday$Global_active_power_wh, col="orange")
+ggplot(PowerConsumption_byday, aes(x=Date, y=Weight, fill=Cultivar)) +
+  geom_bar(position="dodge")
+str(PowerConsumption_byday)
+str(PowerConsumption)
+
+##8.1 Create a subsample of the dataset - consumption_by_day
+PowerConsumption_byday <- PowerConsumption %>%
+  group_by(Date) %>%
+  summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
+summary(PowerConsumption_byday)
+#? summarise
+
+#8.1.1 Plot subsample
+plot(PowerConsumption_byday)
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_Sub_meter)
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_power_wh)
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_active_power_wh)
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_reactive_power_wh)
+
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_1)
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_2)
+plot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_3)
+
+##8.1 Create a subsample of the dataset - consumption_by_type_of_day
+PowerConsumption %>%
+  group_by(Month) %>%
+  summarise(Global_power_wh = sum(Global_power_wh))
+summary(PowerConsumption_Month)
+
+str(PowerConsumption)
+
+
+# PowerConsumption_double_2007 <- PowerConsumption_double %>% filter(Date <= as.Date("31/12/2007"))
+## Continuar...
+
 
 #plot(PowerConsumption$Global_active_power)
 #View(PowerConsumption)
 
+# install.packages("makeR")
+# library(makeR)
+# calendarHeat(PowerConsumption$Global_power, ncolors = 9, color = "r2b", date.form = "%Y-%m-%d")
