@@ -269,7 +269,7 @@ PowerConsumption_byday <- PowerConsumption %>%
 summary(PowerConsumption_byday)
 #? summarise
 
-#8.1.1 Plot subsample
+#8.1.1 Plot subsample 
 #qplot(PowerConsumption_byday)
 #qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_Sub_meter)
 qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Global_power_wh)
@@ -281,7 +281,7 @@ qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_2)
 qplot(PowerConsumption_byday$Date, PowerConsumption_byday$Sub_metering_3)
 
 
-####9. Generic Exploration #### 
+#### 9. Generic Exploration #### 
 
 hist(PowerConsumption$Global_active_power)
 hist(PowerConsumption$Global_reactive_power)
@@ -305,7 +305,7 @@ hist(PowerConsumption_byday$Sub_metering_2)
 hist(PowerConsumption_byday$Sub_metering_1)
 hist(PowerConsumption_byday$Sub_metering_3)
 
-##9.1 Create a subsample of the dataset - consumption_by_type_of_day 
+#### 9.# Create a subsample of the dataset - consumption_by_type_of_day ####
 #summary(PowerConsumption_c)
 
 #PowerConsumption_Type_of_day <- PowerConsumption_c %>%
@@ -314,7 +314,7 @@ hist(PowerConsumption_byday$Sub_metering_3)
 #summary(PowerConsumption_Type_of_day)
 #qplot(PowerConsumption_Type_of_day$Global_power_wh, PowerConsumption_Type_of_day$Global_active_power_wh)
 
-##9.2 Create a subsample of the dataset - By hour
+#### 9.0 Create a subsample of the dataset - By hour ####
 PowerConsumption_Hour <- PowerConsumption_c %>%
   group_by(Hour, Date) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
@@ -325,7 +325,7 @@ qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Sub_metering_1, col="ora
 qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Sub_metering_2, col="orange")
 qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Sub_metering_3, col="orange")
 
-##9.3 Create a subsample of the dataset - By Month
+#### 9.1 Create a subsample of the dataset - By Month ####
 PowerConsumption_Month <- PowerConsumption_c %>%
   group_by(Month,Year) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
@@ -348,7 +348,7 @@ ggplot(PowerConsumption_Month, aes(x=Month, y=Sub_metering_1, fill=Month))+geom_
 ggplot(PowerConsumption_Month, aes(x=Month, y=Global_power_wh, fill=Month))+geom_bar(stat = "identity")+scale_fill_brewer(palette="Spectral")+facet_wrap(~ Year)
 
 
-##9.4 Create a subsample of the dataset - By year
+#### 9.2 Create a subsample of the dataset - By year ####
 PowerConsumption_Year <- PowerConsumption_c %>%
   group_by(Year) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
@@ -370,7 +370,7 @@ qplot(PowerConsumption_Year$Year, PowerConsumption_Year$Sub_metering_3, col="yel
 ### C:not descending, but pick in 2009
 str(PowerConsumption)
 
-##9.4 Create a subsample of the dataset - By Period of day
+#### 9.3 Create a subsample of the dataset - By Period of day ####
 PowerConsumption_Period_of_day<- PowerConsumption_c %>%
   group_by(Period_of_day) %>%
   summarise(Global_power_wh = mean(Global_power_wh), Global_reactive_power_wh=mean(Global_reactive_power), Global_active_power_wh=mean(Global_active_power), Global_Sub_meter=mean(Global_Sub_metering), Sub_metering_1=mean(Sub_metering_1), Sub_metering_2=mean(Sub_metering_2), Sub_metering_3=mean(Sub_metering_3))
@@ -380,7 +380,7 @@ summary(PowerConsumption_Period_of_day$Period_of_day)
 
 qplot(PowerConsumption_Period_of_day$Period_of_day, PowerConsumption_Period_of_day$Global_power_wh, col="yellow")
 
-##9.5 Create a subsample of the dataset - season of year
+#### 9.4 Create a subsample of the dataset - season of year ####
 PowerConsumption_Season_year<- PowerConsumption_c %>%
   group_by(Season_of_year) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
@@ -396,7 +396,7 @@ qplot(PowerConsumption_Season_year$Season_of_year, PowerConsumption_Season_year$
 qplot(PowerConsumption_Season_year$Season_of_year, PowerConsumption_Season_year$Sub_metering_3, col="yellow")
 ### C: everything very low in the summer, except for reactive energy
 
-##9.5 Create a subsample of the dataset - day of the week
+#### 9.5 Create a subsample of the dataset - day of the week ####
 PowerConsumption_Day_of_week<- PowerConsumption_c %>%
   group_by(Day_of_week) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
@@ -413,6 +413,8 @@ qplot(PowerConsumption_Day_of_week$Day_of_week, PowerConsumption_Day_of_week$Sub
 qplot(PowerConsumption_Day_of_week$Day_of_week, PowerConsumption_Day_of_week$Sub_metering_3, col="yellow")
 ### C: something is going on
 
+
+#### Other stuff ####
 # PowerConsumption_double_2007 <- PowerConsumption_double %>% filter(Date <= as.Date("31/12/2007"))
 
 cor(PowerConsumption_double)
