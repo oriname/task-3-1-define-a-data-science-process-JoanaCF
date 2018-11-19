@@ -452,9 +452,7 @@ ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Sub_metering_2, fill=D
 ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Sub_metering_3, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set2") 
 ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Global_active_power_wh, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set3") 
 
-
-
-#### Task 3.2 ### 
+#### Task 3.2 #### 
 
 #### 9.6 Create a subsample of the dataset - from this date to this date
 
@@ -465,12 +463,7 @@ str(PowerConsumption_double)
 str(PowerConsumption_c$Date)
 head(PowerConsumption_c)
 
-cor(PowerConsumption_double)
-
 ggplot(PowerConsumption_Month, aes(x=Month))+geom_line(aes(y=Global_power_wh))+geom_line(aes(y=Global_active_power_wh))
-
-
-#### Task 3.2 #### 
 
 #### 1. Try filtering data by date - test #### 
 PowerConsumption_test <- PowerConsumption_double
@@ -632,11 +625,11 @@ summary(PowerConsumption_NA_07_jul %>% filter(Day > 15))
 
 #### 3.2 Identify consecutive values #### 
 PowerConsumption_byday$consecutive_day <- c(NA, diff(ymd(PowerConsumption_byday$Date))==1)
-View(PowerConsumption_byday)
+#View(PowerConsumption_byday)
 PowerConsumption_byday %>% filter(consecutive_day == "FALSE")
 
 #### 3.3 Replace #### 
-na.locf(PowerConsumption)
+#na.locf(PowerConsumption)
 ? na.locf 
 ?? na.locf 
 
@@ -710,3 +703,17 @@ summary(PowerConsumption$No_Sub_metering_Energy)
 summary(PowerConsumption_c$No_Sub_metering_Energy)
 ### E: I have negative values for this. 
 
+
+
+
+#### 4. Check dataset #### 
+
+## 4.1 Data Types
+str(PowerConsumption)
+
+## 4.2 Data sample
+str(PowerConsumption)
+PowerConsumption_sub <- PowerConsumption %>% filter(Year >= "2007")
+summary(PowerConsumption_sub)
+PowerConsumption_2006 <- PowerConsumption %>% filter(Year == "2006")
+summary(PowerConsumption_2006)
