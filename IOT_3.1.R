@@ -452,6 +452,7 @@ ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Sub_metering_2, fill=D
 ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Sub_metering_3, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set2") 
 ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Global_active_power_wh, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set3") 
 
+
 #### Task 3.2 #### 
 
 #### 9.6 Create a subsample of the dataset - from this date to this date
@@ -703,9 +704,6 @@ summary(PowerConsumption$No_Sub_metering_Energy)
 summary(PowerConsumption_c$No_Sub_metering_Energy)
 ### E: I have negative values for this. 
 
-
-
-
 #### 4. Check dataset #### 
 
 ## 4.1 Data Types
@@ -717,3 +715,98 @@ PowerConsumption_sub <- PowerConsumption %>% filter(Year >= "2007")
 summary(PowerConsumption_sub)
 PowerConsumption_2006 <- PowerConsumption %>% filter(Year == "2006")
 summary(PowerConsumption_2006)
+
+#### 5. Time series ####  
+
+## 5.1 Grouped by day 
+PowerConsumption$Time <- NULL
+str(PowerConsumption)
+
+library(dplyr)
+PowerConsumption_Day_ <- PowerConsumption_sub %>%
+  group_by(Date) %>% 
+  summarise(sum_global_power_wh=sum(Global_power_wh), 
+                sum_global_active_wh = sum(Global_active_power_wh), 
+                sum_global_reactive_wh = sum(Global_reactive_power_wh),
+                sum_sub_meter_1 = sum(Sub_metering_1), 
+                sum_sub_meter_2 = sum(Sub_metering_2),
+                sum_sub_meter_3 = sum(Sub_metering_3),
+                sum_no_sub_meter = sum(No_Sub_metering_Energy),
+                sum_global_sub_meter = sum(Global_Sub_metering),
+                sum_global_intensity = sum(Global_intensity),
+                sum_voltage = sum(Voltage))
+summary(PowerConsumption_Day_)
+           
+## 5.2 install packages
+
+#install.packages("stats")
+library(stats)
+
+ts(data = PowerConsumption_Day_,frequency = 365, start = 2007)
+ts_test <- ts(data = PowerConsumption_Day_,frequency = 365, start = 2007)
+plot(ts_test)
+print(ts_test)
+
+   
+## 5.3.1 group by - test
+
+PowerConsumption_Day_test <- PowerConsumption_sub %>%
+  group_by(Date) %>% 
+  summarise(sum_global_power_wh=sum(Global_power_wh))
+summary(PowerConsumption_Day_test)
+View(PowerConsumption_Day_test)
+PowerConsumption_day_test_1c <- PowerConsumption_Day_test[c(2)]
+View(PowerConsumption_day_test_1c)
+
+## time series - test
+
+ts(data=PowerConsumption_day_test_1c, frequency = 365, start = 2007)
+ts_test_2 <- ts(data=PowerConsumption_day_test_1c, frequency = 365, start = 2007)
+print(ts_test_2)
+plot(ts_test_2, main="Evolution of Global Power Consumption by day (2007 - 2010)")
+plot.ts(ts_test_2, main="Evolution of Global Power Consumption by day (2007 - 2010)")
+
+## 5.3.2 group by test 2
+
+PowerConsumption_Day_test2 <- PowerConsumption_sub %>%
+  group_by(Date) %>% 
+  summarise(sum_global_power_wh=sum(Global_power_wh),
+          sum_global_active_wh = sum(Global_active_power_wh), 
+          sum_global_reactive_wh = sum(Global_reactive_power_wh),
+          sum_sub_meter_1 = sum(Sub_metering_1), 
+          sum_sub_meter_2 = sum(Sub_metering_2),
+          sum_sub_meter_3 = sum(Sub_metering_3),
+          sum_no_sub_meter = sum(No_Sub_metering_Energy),
+          sum_global_sub_meter = sum(Global_Sub_metering),
+          sum_global_intensity = sum(Global_intensity),
+          sum_voltage = sum(Voltage))
+summary(PowerConsumption_Day_test2)
+PowerConsumption_Day_test2<- PowerConsumption_Day_test2[c(2:10)]
+summary(PowerConsumption_Day_test2)
+
+ts(data=PowerConsumption_Day_test2, frequency= 365, start = 2007)
+ts_test2 <- ts(data=PowerConsumption_Day_test2, frequency= 365, start = 2007)
+print(ts_test2)
+plot(ts_test2)
+plot.ts(ts_test2, plot.type = "s", col=1:9) 
+plot.ts(ts_test2, plot.type = "m", col=1:9, mar=c(gap=0.3, 5.1, gap=0.3, 2.1)) 
+plot(ts_test2[, 2])
+plot(ts_test2[, 3])
+plot(ts_test2[, 5])
+summary(ts_test2)
+
+plot.ts(ts_test2[,1:5], plot.type = "s", col=1:5) 
+plot.ts(ts_test2[,"sum_sub_meter_1"], plot.type = "s") 
+
+#
+library("TTR")
+plot.ts(SMA(ts_test2[,"sum_sub_meter_1"],n=8))
+ts_test2[,"sum_sub_meter_1"]
+test_decompose <-decompose (ts_test2[,"sum_sub_meter_1"])
+plot(test_decompose)
+
+
+## https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
+# birthstimeseriescomponents <- decompose(birthstimeseries)
+# birthstimeseriesseasonallyadjusted <- birthstimeseries - birthstimeseriescomponents$seasonal
+# plot(birthstimeseriesseasonallyadjusted)
