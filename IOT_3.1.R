@@ -489,7 +489,8 @@ PowerConsumption_c %>% filter(Date > ymd("2009-12-16"))
 
 head(PowerConsumption_c)
 
-#### 3. Missing values - dealing with them  #### 
+#### 3. Missing values
+#### 3.1 Descriptive ######## 
 
 PowerConsumption %>% filter(is.na(Global_active_power))
 PowerConsumption_NA <- PowerConsumption %>% filter(is.na(Global_active_power))
@@ -523,6 +524,7 @@ plot(PowerConsumption_NA_Day$Day_of_week)
 ### C: much more in weekends
 plot(PowerConsumption_NA_Day$Period_of_day)
 ### C: much less in evening, some more in night 
+
 
 
 #### 2010 ####
@@ -628,10 +630,83 @@ PowerConsumption_NA_07_jul <- PowerConsumption_NA_07 %>% filter(Month == 7)
 plot(PowerConsumption_NA_07_jul$Day)
 summary(PowerConsumption_NA_07_jul %>% filter(Day > 15))
 
-
-#### 3.1 . Identify consecutive values
-
+#### 3.2 Identify consecutive values #### 
 PowerConsumption_byday$consecutive_day <- c(NA, diff(ymd(PowerConsumption_byday$Date))==1)
 View(PowerConsumption_byday)
 PowerConsumption_byday %>% filter(consecutive_day == "FALSE")
+
+#### 3.3 Replace #### 
+na.locf(PowerConsumption)
+? na.locf 
+?? na.locf 
+
+## install.packages("dendextend")
+library(dendextend)
+PowerConsumption$Global_active_power <- na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
+is.na(PowerConsumption$Global_active_power)
+### P : wrong package 
+
+## install.packages("zoo")
+library (zoo)
+
+# Global active power
+na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
+PowerConsumption$Global_active_power <- na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
+is.na(PowerConsumption$Global_active_power)
+sum(is.na(PowerConsumption$Global_active_power))
+
+# Global reactive power
+PowerConsumption$Global_reactive_power <- na.locf(PowerConsumption$Global_reactive_power, recursive = TRUE)
+sum(is.na(PowerConsumption$Global_reactive_power))
+summary(PowerConsumption)
+
+# Voltage 
+na.locf(PowerConsumption$Voltage, recursive = TRUE)
+PowerConsumption$Voltage <- na.locf(PowerConsumption$Voltage, recursive = TRUE)
+sum(is.na(PowerConsumption$Voltage))
+summary(PowerConsumption$Voltage)
+summary(PowerConsumption_c$Voltage)
+sum(is.na(PowerConsumption_double$Voltage))
+summary(PowerConsumption_double$Voltage)
+
+# Global intensity 
+PowerConsumption$Global_intensity <- na.locf(PowerConsumption$Global_intensity, recursive = TRUE)
+sum(is.na(PowerConsumption$Global_intensity))
+
+# Sub_metering_1
+PowerConsumption$Sub_metering_1 <- na.locf(PowerConsumption$Sub_metering_1, recursive = TRUE)
+sum(is.na(PowerConsumption$Sub_metering_1))
+
+# Sub_metering_2
+PowerConsumption$Sub_metering_2 <- na.locf(PowerConsumption$Sub_metering_2, recursive = TRUE)
+sum(is.na(PowerConsumption$Sub_metering_2))
+
+# Sub_metering_3
+PowerConsumption$Sub_metering_3 <- na.locf(PowerConsumption$Sub_metering_3, recursive = TRUE)
+sum(is.na(PowerConsumption$Sub_metering_3))
+
+# Global_power
+PowerConsumption$Global_power <- PowerConsumption$Global_active_power + PowerConsumption$Global_reactive_power
+summary(PowerConsumption$Global_power)
+
+# Global_power_wh
+PowerConsumption$Global_power_wh = PowerConsumption$Global_power*1000/60
+summary(PowerConsumption$Global_power_wh)
+
+# Global_active_power_wh
+PowerConsumption$Global_active_power_wh <- PowerConsumption$Global_active_power*1000/60
+summary(PowerConsumption$Global_active_power_wh)
+
+# Global_reactive_power_wh
+PowerConsumption$Global_reactive_power_wh <- PowerConsumption$Global_reactive_power*1000/60
+summary(PowerConsumption$Global_reactive_power_wh)
+
+# Global_sub_meter
+PowerConsumption$Global_Sub_metering <- PowerConsumption$Sub_metering_1 + PowerConsumption$Sub_metering_2 + PowerConsumption$Sub_metering_3
+summary(PowerConsumption$Global_Sub_metering)
+
+PowerConsumption$No_Sub_metering_Energy<- PowerConsumption$Global_active_power*1000/60 - (PowerConsumption$Sub_metering_1 + PowerConsumption$Sub_metering_2 +PowerConsumption$Sub_metering_3)
+summary(PowerConsumption$No_Sub_metering_Energy)
+summary(PowerConsumption_c$No_Sub_metering_Energy)
+### E: I have negative values for this. 
 
