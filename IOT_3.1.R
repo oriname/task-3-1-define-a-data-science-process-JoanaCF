@@ -469,6 +469,7 @@ cor(PowerConsumption_double)
 
 ggplot(PowerConsumption_Month, aes(x=Month))+geom_line(aes(y=Global_power_wh))+geom_line(aes(y=Global_active_power_wh))
 
+
 #### Task 3.2 #### 
 
 #### 1. Try filtering data by date - test #### 
@@ -478,7 +479,6 @@ str(PowerConsumption_test)
 PowerConsumption_test %>% filter(Date > "2009-12-16")
 
 #### 2. Try filtering data by date - Deleted Time variable #### 
-
 PowerConsumption_c %>% filter(Date > dmy("2009-12-16"))
 ### E: All formats failed to parse. No formats found. 
 str(PowerConsumption_c)
@@ -487,6 +487,151 @@ PowerConsumption_c$Time <- NULL
 str(PowerConsumption_c)
 PowerConsumption_c %>% filter(Date > ymd("2009-12-16"))
 
+head(PowerConsumption_c)
+
+#### 3. Missing values - dealing with them  #### 
+
+PowerConsumption %>% filter(is.na(Global_active_power))
+PowerConsumption_NA <- PowerConsumption %>% filter(is.na(Global_active_power))
+View(PowerConsumption_NA)
+summary(PowerConsumption_NA)
+
+plot(PowerConsumption_NA$Date)
+plot(PowerConsumption_NA$DateTime)
+### H: interpret the plot
+
+PowerConsumption_NA$Time <- NULL
+
+count(PowerConsumption_NA%>% filter(Year==2007))
+count(PowerConsumption_NA%>% filter(Year==2006))
+count(PowerConsumption_NA%>% filter(Year==2008))
+count(PowerConsumption_NA%>% filter(Year==2009))
+count(PowerConsumption_NA%>% filter(Year==2010))
+
+PowerConsumption_NA_Day <- PowerConsumption_NA %>%
+  group_by(Day, Year)
+
+plot(PowerConsumption_NA_Day$Hour)
+### C: anyhour
+plot(PowerConsumption_NA_Day$Year)
+### C: insignificant 2008 and 2006, similar in 2009 and 2007 and big in 2010 
+plot(PowerConsumption_NA_Day$Day)
+### C: more frequent from 13/ 14 onwards ? 
+plot(PowerConsumption_NA_Day$Season_of_year)
+### C: much more in summer
+plot(PowerConsumption_NA_Day$Day_of_week)
+### C: much more in weekends
+plot(PowerConsumption_NA_Day$Period_of_day)
+### C: much less in evening, some more in night 
 
 
+#### 2010 ####
+
+## jan
+PowerConsumption_NA_10 <- PowerConsumption_NA%>% filter(Year==2010)
+PowerConsumption_NA_10_jan <- PowerConsumption_NA%>% filter(Year==2010 & Month==1)
+plot(PowerConsumption_NA_10$Date) 
+summary(PowerConsumption_NA_10_jan)
+summary(PowerConsumption_NA_10_jan %>% filter(Day==12))
+### C: starts at 14:53:00 until 23:59:00
+summary(PowerConsumption_NA_10_jan %>% filter(Day==13))
+### C: all day
+summary(PowerConsumption_NA_10_jan %>% filter(Day==14))
+### C: until 19:01:00
+head(PowerConsumption_NA_10)
+
+## mar
+PowerConsumption_NA_10_mar <- PowerConsumption_NA%>% filter(Year==2010 & Month==3)
+plot(PowerConsumption_NA_10_mar$Day) 
+
+summary(PowerConsumption_NA_10_mar %>% filter(Day==21))
+
+## aug
+PowerConsumption_NA%>% filter(Year==2010 & Month>3 & Month < 9)
+summary(PowerConsumption_NA%>% filter(Year==2010 & Month==8 & Day == 21))
+### C: another black out in august - from 17 / 08 until 22 / 08
+
+## sept 
+summary(PowerConsumption_NA%>% filter(Year==2010 & Month==9 & Day == 25))
+summary(PowerConsumption_NA%>% filter(Year==2010 & Month==9 & Day == 28))
+### C: another black out from 25 - 28 sept
+
+#### 2006 ####
+summary(PowerConsumption_NA%>% filter(Year==2006))
+head(PowerConsumption_NA)
+### C: 2 minutes per day (2 days)
+
+#### 2008 ####
+PowerConsumption_NA_08 <- PowerConsumption_NA%>% filter(Year==2008)
+plot(PowerConsumption_NA_08$Date)
+head(PowerConsumption_NA_08)
+PowerConsumption_NA_08%>% filter(Month <= 9)
+summary(PowerConsumption_NA_08%>% filter(Month == 10))
+### C: black out 50 min  
+is.na(PowerConsumption_NA_08$DateTime)
+PowerConsumption_NA_08%>% filter(Month == 11)
+summary(PowerConsumption_NA_08%>% filter(Month == 12 & Day == 10))
+### back out 1h10 
+summary(PowerConsumption_NA_08%>% filter(Month == 12 & Day == 20))
+### 1 min
+
+#### 2009 ####
+PowerConsumption_NA_09 <- PowerConsumption_NA%>% filter(Year==2009)
+plot(PowerConsumption_NA_09$Date)
+
+## fev
+summary(PowerConsumption_NA_09%>% filter(Month == 2))
+PowerConsumption_NA_09_fev <- PowerConsumption_NA%>% filter(Year==2009 & Month == 2)
+plot(PowerConsumption_NA_09_fev$Day)
+summary(PowerConsumption_NA%>% filter(Year==2009 & Month == 2))
+
+summary(PowerConsumption_NA%>% filter(Year==2009 & Month == 2 & Day == 17))
+
+## jun
+head(PowerConsumption_NA_09%>% filter(Month > 2 & Month <= 6))
+summary(PowerConsumption_NA_09%>% filter(Month > 2 & Month == 6))
+PowerConsumption_NA_09%>% filter(Month > 2 & Month == 7)
+PowerConsumption_NA_09%>% filter(Month > 2 & Month == 6 & Day == 15)
+summary(PowerConsumption_NA_09%>% filter(Month > 2 & Month == 6 & Day == 15))
+### C: black out - 3 days 
+
+## ago
+summary(PowerConsumption_NA_09%>% filter(Month > 2 & Month == 8))
+### C: black out < 1 day 
+
+head(PowerConsumption_NA_09%>% filter(Month > 2 & Month >=9))
+
+#### 2007 ####
+
+PowerConsumption_NA_07<- PowerConsumption_NA%>% filter(Year==2007)
+plot(PowerConsumption_NA_07$Date)
+
+## apr
+PowerConsumption_NA_07_apr <- PowerConsumption_NA_07 %>% filter(Month == 4)
+plot(PowerConsumption_NA_07_apr$Day)
+summary(PowerConsumption_NA_07_apr)
+summary(PowerConsumption_NA_07_apr %>% filter(Day == 30))
+### C: 3 days of black out 
+
+## jun
+PowerConsumption_NA_07_jun <- PowerConsumption_NA_07 %>% filter(Month == 6)
+plot(PowerConsumption_NA_07_jun$Date)
+
+PowerConsumption_NA_07_jun%>% filter(Day == 9)
+PowerConsumption_NA_07_jun%>% filter(Day > 9)
+
+## set - dez
+PowerConsumption_NA_07 %>% filter(Month > 7)
+
+## jul
+PowerConsumption_NA_07_jul <- PowerConsumption_NA_07 %>% filter(Month == 7)
+plot(PowerConsumption_NA_07_jul$Day)
+summary(PowerConsumption_NA_07_jul %>% filter(Day > 15))
+
+
+#### 3.1 . Identify consecutive values
+
+PowerConsumption_byday$consecutive_day <- c(NA, diff(ymd(PowerConsumption_byday$Date))==1)
+View(PowerConsumption_byday)
+PowerConsumption_byday %>% filter(consecutive_day == "FALSE")
 
