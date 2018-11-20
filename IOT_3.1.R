@@ -790,7 +790,6 @@ plot(test_decompose)
 
 ts_test2_adjusted <- ts_test2 - test_decompose$seasonal
 plot.ts(ts_test2_adjusted, plot.type = "s",col=1:5) 
-
 plot.ts(ts_test2_adjusted, plot.type = "s",col=1:5) 
 
 
@@ -824,7 +823,7 @@ forecast:::plot.forecast(ts_test2_sub_meter_1_forecast1051_h365)
 
 ##### TASK 3.2 - FORECASTING  #####
 
-#### A . Describe dataset ####
+#### A. Describe dataset ####
 head(PowerConsumption_sub)
 str(PowerConsumption_sub)
 View(PowerConsumption_sub)
@@ -894,7 +893,101 @@ plot.ts(Consumption_Month_ts[,9:10],plot.type= "s", col=1:2, main="Evolution of 
 ### C: sub-meter and no sub-meter: multiplicative, no constant mean, seasonality and some randomness
 
 
+#### E. Focus on Global energy #### 
 
+#### E.1 Correcting for some multiplicative elements ####
+Log_Global_energy <-log(Consumption_Month_ts[,3])
+plot(Log_Global_energy)
+### C: Global energy: assstivie, moving average, constant trend, seasonality and some randomness
+
+#### E.2 Decomposing ####
+decompose(Log_Global_energy)
+### C: confirmed: addtitive
+Log_Global_energy_decomp <- decompose(Log_Global_energy)
+plot(Log_Global_energy_decomp)
+### C: Definitely some seasonality, definitely spme randomness (although in a shorter period), some unclear trend
+
+#### E.3 Trial: adjust for randomness and for seasonality ####
+
+plot(Log_Global_energy - Log_Global_energy_decomp$seasonal - Log_Global_energy_decomp$random)
+### C: very weird output
+
+plot(Log_Global_energy - Log_Global_energy_decomp$seasonal)
+### C: should I do something with summer of 2008?
+
+
+#### E.4.1 HoltWinters - modelling ####
+library(forecast)
+HoltWinters(Log_Global_energy)
+### C: Holt-Winters exponential smoothing with trend and additive seasonal component / Smoothing parameters: alpha: 0; beta : 0; gamma: 0.1249263
+### C: seems to corroborate that the most important element is seasonality 
+
+Log_Global_energy_forecastHW <- HoltWinters(Log_Global_energy)
+plot(Log_Global_energy_forecastHW)
+Log_Global_energy_forecastHW$SSE
+### C: SSE: 0.8646212
+
+#### E.4.2 HoltWinters - forecast ####
+forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=13)
+Log_Global_energy_forecastHW_h13 <- forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=13)
+Log_Global_energy_forecastHW_h13
+forecast:::plot.forecast(Log_Global_energy_forecastHW_h13)
+### C: unlog
+
+#### E.4.2 HoltWinters - forecast - unlogged ####
+unLog_Global_energy_forecastHW_h13 <- forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=13)
+unLog_Global_energy_forecastHW_h13$mean <- exp(unLog_Global_energy_forecastHW_h13$mean)
+unLog_Global_energy_forecastHW_h13$upper <- exp(unLog_Global_energy_forecastHW_h13$upper)
+unLog_Global_energy_forecastHW_h13$lower <- exp(unLog_Global_energy_forecastHW_h13$lower)
+unLog_Global_energy_forecastHW_h13$x <- exp(unLog_Global_energy_forecastHW_h13$x)
+
+plot(unLog_Global_energy_forecastHW_h13, main = "Forecast (HW) of Global energy (nov10 - dez11)")
+library(forecast)
+forecast:::plot.forecast(unLog_Global_energy_forecastHW_h13, main = "Forecast (HW) of Global energy (nov10 - dez11)")
+max(Consumption_Month_$Global_active_wh)
+### C: 1,210,092 wh
+
+#### E.4.2 HoltWinters - assess correlation of errors with lags ####
+#Acf(Log_Global_energy_forecastHW_h13)
+### E: what is this?
+
+Acf(Log_Global_energy_forecastHW_h13$residuals, lag.max=20)
+### C: P=0
+Pacf(Log_Global_energy_forecastHW_h13$residuals, lag.max=20)
+### C: P=0
+
+plot.ts(Log_Global_energy_forecastHW_h13$residuals)
+### C: exception: summer 2008 
+
+#### F.1 ARIMA - chek for stationarity ####
+
+Log_Global_energy_diff <- diff(Log_Global_energy, differences=1)
+plot.ts(Log_Global_energy_diff)
+### C: not stationary
+
+Log_Global_energy_diff2 <- diff(Log_Global_energy, differences=2)
+plot.ts(Log_Global_energy_diff2)
+### C: still not stationary
+
+Log_Global_energy_diff3 <- diff(Log_Global_energy, differences=3)
+plot.ts(Log_Global_energy_diff3)
+
+Log_Global_energy_diff4 <- diff(Log_Global_energy, differences=4)
+plot.ts(Log_Global_energy_diff4)
+
+Log_Global_energy_diff5 <- diff(Log_Global_energy, differences=5)
+plot.ts(Log_Global_energy_diff5)
+
+Log_Global_energy_diff6 <- diff(Log_Global_energy, differences=6)
+plot.ts(Log_Global_energy_diff6)
+
+Log_Global_energy_diff7 <- diff(Log_Global_energy, differences=7)
+plot.ts(Log_Global_energy_diff7)
+
+# (...)
+
+Log_Global_energy_diff25 <- diff(Log_Global_energy, differences=25)
+plot.ts(Log_Global_energy_diff25)
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
