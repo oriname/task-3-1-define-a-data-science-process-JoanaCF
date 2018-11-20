@@ -618,6 +618,8 @@ PowerConsumption_byday %>% filter(consecutive_day == "FALSE")
 library(dendextend)
 PowerConsumption$Global_active_power <- na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
 is.na(PowerConsumption$Global_active_power)
+
+?na.locf
 ### P : wrong package 
 
 ## install.packages("zoo")
@@ -821,8 +823,10 @@ forecast:::plot.forecast(ts_test2_sub_meter_1_forecast1051_h365)
 
 
 
-##### TASK 3.2 - FORECASTING  #####
 
+
+
+##### TASK 3.2 - FORECASTING  #####
 #### A. Describe dataset ####
 head(PowerConsumption_sub)
 str(PowerConsumption_sub)
@@ -877,7 +881,6 @@ plot.ts(Consumption_Month_ts[,3:5],
 
 plot.ts(Consumption_Month_ts[,3:5], plot.type = "s", col=1:3, main="Evolution of global energy, active energy and reactive energy by month, in wh, (2007 - 2010)") 
 ### C: misses the legend and y-axis
-
 
 #### D.2 Plot sub-metering 1, sub-metering 2 and submetering 3 #### 
 plot.ts(Consumption_Month_ts[,6:8], main="Evolution of sub-meter 1, sub-meter 2 and sub-meter 3, in wh, (2007 - 2010)") 
@@ -947,6 +950,14 @@ forecast:::plot.forecast(unLog_Global_energy_forecastHW_h13, main = "Forecast (H
 max(Consumption_Month_$Global_active_wh)
 ### C: 1,210,092 wh
 
+autoplot(unLog_Global_energy_forecastHW_h13) +
+  ggtitle("Forecasts HW - Global energy (nov10 - dec11") +
+  xlab("Year") + ylab("Global energy in wh")
+
+autoplot(unLog_Global_energy_forecastHW_h13, facets=TRUE) +
+  xlab("Year") + ylab("Log_Predicted_Global_Energy") +
+  ggtitle("HW:Predicted Global Energy in wh (nov10-dez11)")
+
 #### E.4.2 HoltWinters - assess correlation of errors with lags ####
 #Acf(Log_Global_energy_forecastHW_h13)
 ### E: what is this?
@@ -960,7 +971,6 @@ plot.ts(Log_Global_energy_forecastHW_h13$residuals)
 ### C: exception: summer 2008 
 
 #### F.1 ARIMA - chek for stationarity ####
-
 Log_Global_energy_diff <- diff(Log_Global_energy, differences=1)
 plot.ts(Log_Global_energy_diff)
 ### C: not stationary
@@ -988,6 +998,60 @@ plot.ts(Log_Global_energy_diff7)
 
 Log_Global_energy_diff25 <- diff(Log_Global_energy, differences=25)
 plot.ts(Log_Global_energy_diff25)
+
+#### F.2 ARIMA - parameters ####
+acf(Log_Global_energy_diff10, lag.max=20)
+### C: p=7/8
+
+pacf(Log_Global_energy_diff10, lag.max=20)
+### C: p=3
+
+?deriv
+deriv(Log_Global_energy, namevec)
+
+auto.arima(Log_Global_energy)
+### C: I don't know how to interpret
+
+
+
+
+
+#### G.1 Linear Model Time Series - modelling / forecasting ####
+
+#### G.1.1 Time Series with trend + season ####
+Log_Global_energy_fit_tslm <- tslm(Log_Global_energy ~ trend + season)
+Log_Global_energy_forecast_tslm <- forecast(Log_Global_energy_fit_tslm)
+plot(Log_Global_energy_forecast_tslm)
+Log_Global_energy_forecast_tslm
+
+autoplot(Log_Global_energy_forecast_tslm, facets=TRUE) +
+  xlab("Year") + ylab("Log_Predicted_Global_Energy") +
+  ggtitle("LM: Predicted Global Energy in wh (nov10-dez11)")
+
+Log_Global_energy_forecast_tslm$SSE
+### E: NULL
+
+Acf(Log_Global_energy_forecast_tslm$residuals, lag.max=20)
+### C: P=1
+Pacf(Log_Global_energy_forecast_tslm$residuals, lag.max=20)
+### C: P=1
+
+plot.ts(Log_Global_energy_forecast_tslm$residuals)
+
+#### G.1.2 Time Series with season ####
+Log_Global_energy_fit_tslm2 <- tslm(Log_Global_energy ~ season)
+Log_Global_energy_forecast_tslm2 <- forecast(Log_Global_energy_fit_tslm2)
+plot(Log_Global_energy_forecast_tslm2)
+Log_Global_energy_forecast_tslm2
+autoplot(Log_Global_energy_forecast_tslm2, facets=TRUE) +
+  xlab("Year") + ylab("Log_Predicted_Global_Energy") +
+  ggtitle("LM2: Predicted Global Energy in wh (nov10-dez11)")
+
+#### H Split dataset - test and training ####
+? tsCV
+tsCV(unLog_Global_energy_forecastHW_h13, Log_Global_energy_forecastHW, h=13)
+
+library(caret)
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
