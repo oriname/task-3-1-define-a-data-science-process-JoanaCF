@@ -441,6 +441,7 @@ summary(PowerConsumption_Day_of_week)
 #ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Global_active_power_wh, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set3") 
 
 
+
 #### Task 3.2 #### 
 
 #### 9.6 Create a subsample of the dataset - from this date to this date
@@ -618,6 +619,7 @@ PowerConsumption_byday %>% filter(consecutive_day == "FALSE")
 library(dendextend)
 PowerConsumption$Global_active_power <- na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
 is.na(PowerConsumption$Global_active_power)
+
 
 ?na.locf
 ### P : wrong package 
@@ -950,6 +952,9 @@ forecast:::plot.forecast(unLog_Global_energy_forecastHW_h13, main = "Forecast (H
 max(Consumption_Month_$Global_active_wh)
 ### C: 1,210,092 wh
 
+Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2]
+hist(Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2])
+
 autoplot(unLog_Global_energy_forecastHW_h13) +
   ggtitle("Forecasts HW - Global energy (nov10 - dec11") +
   xlab("Year") + ylab("Global energy in wh")
@@ -974,6 +979,11 @@ plot.ts(Log_Global_energy_forecastHW_h13$residuals)
 Log_Global_energy_diff <- diff(Log_Global_energy, differences=1)
 plot.ts(Log_Global_energy_diff)
 ### C: not stationary
+acf(Log_Global_energy_diff)
+pacf(Log_Global_energy_diff)
+
+
+### C: 1 derivada 
 
 Log_Global_energy_diff2 <- diff(Log_Global_energy, differences=2)
 plot.ts(Log_Global_energy_diff2)
@@ -1013,8 +1023,7 @@ auto.arima(Log_Global_energy)
 ### C: I don't know how to interpret
 
 
-
-
+### C: hacer arima(....) con parametros definidos
 
 #### G.1 Linear Model Time Series - modelling / forecasting ####
 
