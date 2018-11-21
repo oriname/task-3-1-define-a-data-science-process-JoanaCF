@@ -900,7 +900,9 @@ min(select(Global_power_wh_Aug %>% filter(Year != 2008), Global_power_wh, Year)[
 ### C: 557203.4
 min_global_power_wh_aug <- min(select(Global_power_wh_Aug %>% filter(Year != 2008), Global_power_wh, Year)[,1])
 
-Consumption_Month_$Global_power_wh <- ifelse(Consumption_Month_$Month == 8 & Consumption_Month_$Year == 2008,557203,Consumption_Month_$Global_power_wh) 
+Consumption_Month_$Global_power_wh <- ifelse(Consumption_Month_$Month == 8 & Consumption_Month_$Year == 2008,
+                                             min_global_power_wh_aug,
+                                             Consumption_Month_$Global_power_wh) 
 head(Consumption_Month_$Global_power_wh)
 select(Consumption_Month_ %>% filter(Month==8), Global_power_wh)
 
@@ -913,7 +915,6 @@ Consumption_Month_ts <- ts(data = Consumption_Month_,frequency = 12, start = 200
 str(Consumption_Month_ts)
 ### C: 12 "attributes", first 2 are year and month 
 plot(Consumption_Month_ts[,3:12])
-
 
 #### D. Plotting / exploring variables ####
 #### D.1 Plot Global energy, global active enrgy and global reactive energy#### 
@@ -950,6 +951,7 @@ plot.ts(Consumption_Month_ts[,9:10],plot.type= "s", col=1:2, main="Evolution of 
 Log_Global_energy <-log(Consumption_Month_ts[,3])
 plot(Log_Global_energy)
 ### C: Global energy: assstivie, moving average, constant trend, seasonality and some randomness
+ggseasonplot(Log_Global_energy, season.labels = TRUE, year.labels = TRUE, year.labels.left = TRUE, continuous = FALSE)
 
 #### E.2 Decomposing ####
 decompose(Log_Global_energy)
@@ -1010,7 +1012,6 @@ max(Consumption_Month_$Global_active_wh)
 Log_Global_energy_forecastHW_h13
 Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2]
 hist(Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2])
-
 
 autoplot(unLog_Global_energy_forecastHW_h13) +
   ggtitle("Forecasts HW - Global energy (nov10 - dec11") +
@@ -1106,11 +1107,6 @@ autoplot(Log_Global_energy_forecast_tslm2, facets=TRUE) +
   ggtitle("LM2: Predicted Global Energy in wh (nov10-dez11)")
 
 #### H. Split dataset - test and training ####
-(tbd)
-
-
-
-
 library(stats)
 
 36/47 # size of training
@@ -1121,13 +1117,30 @@ training_month_ts <- ts(data = training_month, frequency = 12, start = 2007)
 test_month<-subset(Consumption_Month_,Year>=2010)
 test_month_ts <- ts(data=test_month, frequency = 12, start = 2010)
 
+#### I. Holt Winters - attempt 2 ####
 
- Arima(training, order=c(2,1,1), seasonal=c(0,1,2), lambda=0)
-#cafe.train %>%
- # forecast(h=60) %>%
-  #autoplot() + autolayer(test)
+# Holt Winters - training - global power
+training_month_ts_global_power <- training_month_ts[,3]
+plot(training_month_ts_global_power)
 
+traing_month_ts_global_power_HW_forecast <-HoltWinters(training_month_ts_global_power)
+traing_month_ts_global_power_HW_forecast$SSE
+plot(Log_Global_energy_forecastHW)
+# E:152108397057
 
+## predicting - 2010
+traing_month_ts_global_power_HW_forecast_12 <- forecast:::forecast.HoltWinters(traing_month_ts_global_power_HW_forecast, h=12)
+plot(traing_month_ts_global_power_HW_forecast_12)
+traing_month_ts_global_power_HW_forecast_12
+
+## plotting errors 
+test_month_ts[,3]
+traing_month_ts_global_power_HW_forecast_12
+df_traing_month_ts_global_power_HW_forecast_12<-data.frame(traing_month_ts_global_power_HW_forecast_12)
+errors_traintest_HW_12 <- df_traing_month_ts_global_power_HW_forecast_12[1:11,2]-test_month_ts[,3]
+MRE_traintest_HW_12<-errors_traintest_HW_12/test_month_ts[,3]
+MRE_traintest_HW_12
+plot(MRE_traintest_HW_12)
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
