@@ -244,7 +244,7 @@ tz(PowerConsumption)
 #PowerConsumption$DateTime = as.POSIXct(PowerConsumption$DateTime,tz="Europe/Paris")
 #PowerConsumption$TimeZone <- ymd_hms(PowerConsumption$DateTime, tz = "Europe/Paris")
 
-#### 8. Exploration by day ####
+#### 8. Exploration by day - Dataset by day ####
 str(PowerConsumption)
 head(PowerConsumption)
 
@@ -339,7 +339,6 @@ PowerConsumption_Month <- PowerConsumption_c %>%
   group_by(Month,Year) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
 summary(PowerConsumption_Month)
-
 #qplot(PowerConsumption_Month$Month, PowerConsumption_Month$Global_power_wh, color="orange")
 #qplot(PowerConsumption_Month$Month, PowerConsumption_Month$Global_active_power_wh)
 #qplot(PowerConsumption_Month$Month, PowerConsumption_Month$Global_reactive_power_wh, col="orange")
@@ -467,7 +466,7 @@ summary(PowerConsumption_Day_of_week)
 #head(PowerConsumption_c)
 
 #### 3. Missing values
-#### 3.1 Descriptive ######## 
+#### 3.1 Missing Values Descriptive ######## 
 
 PowerConsumption %>% filter(is.na(Global_active_power))
 PowerConsumption_NA <- PowerConsumption %>% filter(is.na(Global_active_power))
@@ -619,10 +618,6 @@ PowerConsumption_byday %>% filter(consecutive_day == "FALSE")
 library(dendextend)
 PowerConsumption$Global_active_power <- na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
 is.na(PowerConsumption$Global_active_power)
-
-
-?na.locf
-### P : wrong package 
 
 ## install.packages("zoo")
 library (zoo)
@@ -828,6 +823,7 @@ forecast:::plot.forecast(ts_test2_sub_meter_1_forecast1051_h365)
 
 
 
+
 ##### TASK 3.2 - FORECASTING  #####
 #### A. Describe dataset ####
 head(PowerConsumption_sub)
@@ -840,7 +836,7 @@ summary(PowerConsumption_sub)
 ### C: DateTime as POSIXct, Date as Date
 ### C: No NAs - treated as before - na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
 
-#### B. Group by month ####
+#### B.1 Group by month ####
 library(dplyr)
 Consumption_Month_<- PowerConsumption_sub %>%
   group_by(Year, Month) %>% 
@@ -858,6 +854,55 @@ summary(Consumption_Month_)
 View(Consumption_Month_)
 ### ! Make sure they are ordered by date 
 
+#### B.2 Deal with low values - Global power wh ####
+
+Consumption_Month_ %>% filter(Global_power_wh < 400000)
+### C: 1 point - 8/2008: 300828
+
+plot(Consumption_Month_$Global_power_wh)
+### C: Outlier 
+plot(Consumption_Month_$Global_active_wh)
+plot(Consumption_Month_$Global_reactive_wh)
+### C: No outliers here 
+
+plot(Consumption_Month_$Sub_meter_1_wh)
+### C: Outlier 
+plot(Consumption_Month_$Sub_meter_2_wh)
+### C: Outlier 
+plot(Consumption_Month_$Sub_meter_3_wh)
+### C: Outlier 
+plot(Consumption_Month_$No_sub_meter_wh)
+### C: Outlier
+
+plot(PowerConsumption_byday$Global_power_wh)
+head(PowerConsumption_byday$Date)
+
+PowerConsumption_byday_0808 <- PowerConsumption_byday %>% filter(Date>=(as.Date("2008-08-01"))&
+                                                                   Date<=(as.Date("2008-08-31")))
+plot(PowerConsumption_byday_0808$Sub_metering_3)
+plot(PowerConsumption_byday_0808$Sub_metering_1)
+### C: sub meter 1 was down from most of the month, except for 2 days
+
+plot(Log_Global_energy_decomp)
+plot(Log_Global_energy - Log_Global_energy_decomp$random)
+### C: weird - I loose a lot of observations
+
+##replace value of 08/2008
+select(Consumption_Month_ %>% filter(Month==8), Global_power_wh)
+### C: Aug/07:652288; Aug/08: 300828; Aug/09:627046; Aug/10:557203
+
+Global_power_wh_Aug <- select(Consumption_Month_ %>% filter(Month==8), Global_power_wh, Year)
+Global_power_wh_Aug
+min(Global_power_wh_Aug$Global_power_wh)
+mean(Global_power_wh_Aug$Global_power_wh)
+
+min(select(Global_power_wh_Aug %>% filter(Year != 2008), Global_power_wh, Year)[,1])
+### C: 557203.4
+min_global_power_wh_aug <- min(select(Global_power_wh_Aug %>% filter(Year != 2008), Global_power_wh, Year)[,1])
+
+Consumption_Month_$Global_power_wh <- ifelse(Consumption_Month_$Month == 8 & Consumption_Month_$Year == 2008,557203,Consumption_Month_$Global_power_wh) 
+head(Consumption_Month_$Global_power_wh)
+select(Consumption_Month_ %>% filter(Month==8), Global_power_wh)
 
 #### C. Convert in time series #### 
 library(stats)
@@ -883,6 +928,7 @@ plot.ts(Consumption_Month_ts[,3:5],
 
 plot.ts(Consumption_Month_ts[,3:5], plot.type = "s", col=1:3, main="Evolution of global energy, active energy and reactive energy by month, in wh, (2007 - 2010)") 
 ### C: misses the legend and y-axis
+### C: Carefull: this doesn't make sense anymore - I have corrected for the low value of global power and not fpr the others
 
 #### D.2 Plot sub-metering 1, sub-metering 2 and submetering 3 #### 
 plot.ts(Consumption_Month_ts[,6:8], main="Evolution of sub-meter 1, sub-meter 2 and sub-meter 3, in wh, (2007 - 2010)") 
@@ -912,16 +958,14 @@ Log_Global_energy_decomp <- decompose(Log_Global_energy)
 plot(Log_Global_energy_decomp)
 ### C: Definitely some seasonality, definitely spme randomness (although in a shorter period), some unclear trend
 
-#### E.3 Trial: adjust for randomness and for seasonality ####
-
-plot(Log_Global_energy - Log_Global_energy_decomp$seasonal - Log_Global_energy_decomp$random)
-### C: very weird output
-
+#### E.3 Trial: adjust for seasonality ####
 plot(Log_Global_energy - Log_Global_energy_decomp$seasonal)
 ### C: should I do something with summer of 2008?
 
+#### E.4 Trial: adjust for randomness ####
+plot(Log_Global_energy - Log_Global_energy_decomp$random)
 
-#### E.4.1 HoltWinters - modelling ####
+#### E.5 HoltWinters - modelling - attempt 1 ####
 library(forecast)
 HoltWinters(Log_Global_energy)
 ### C: Holt-Winters exponential smoothing with trend and additive seasonal component / Smoothing parameters: alpha: 0; beta : 0; gamma: 0.1249263
@@ -930,16 +974,26 @@ HoltWinters(Log_Global_energy)
 Log_Global_energy_forecastHW <- HoltWinters(Log_Global_energy)
 plot(Log_Global_energy_forecastHW)
 Log_Global_energy_forecastHW$SSE
-### C: SSE: 0.8646212
+### C: SSE: 0.8646212 / after correcting the low point of global_power: 0.3274959
 
-#### E.4.2 HoltWinters - forecast ####
+#### E.6 HoltWinters - forecast - attempt 1 ####
 forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=13)
 Log_Global_energy_forecastHW_h13 <- forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=13)
 Log_Global_energy_forecastHW_h13
 forecast:::plot.forecast(Log_Global_energy_forecastHW_h13)
+
+forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=7)
+Log_Global_energy_forecastHW_h7 <- forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=7)
+Log_Global_energy_forecastHW_h7
+forecast:::plot.forecast(Log_Global_energy_forecastHW_h7)
+
+forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=25)
+Log_Global_energy_forecastHW_h25 <- forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=25)
+Log_Global_energy_forecastHW_h25
+forecast:::plot.forecast(Log_Global_energy_forecastHW_h25)
 ### C: unlog
 
-#### E.4.2 HoltWinters - forecast - unlogged ####
+#### E.7 HoltWinters - forecast - unlogged - attempt 1 ####
 unLog_Global_energy_forecastHW_h13 <- forecast:::forecast.HoltWinters(Log_Global_energy_forecastHW, h=13)
 unLog_Global_energy_forecastHW_h13$mean <- exp(unLog_Global_energy_forecastHW_h13$mean)
 unLog_Global_energy_forecastHW_h13$upper <- exp(unLog_Global_energy_forecastHW_h13$upper)
@@ -952,8 +1006,11 @@ forecast:::plot.forecast(unLog_Global_energy_forecastHW_h13, main = "Forecast (H
 max(Consumption_Month_$Global_active_wh)
 ### C: 1,210,092 wh
 
+#### E.8 HoltWinters - ploting errors - attempt 1 ####
+Log_Global_energy_forecastHW_h13
 Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2]
 hist(Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2])
+
 
 autoplot(unLog_Global_energy_forecastHW_h13) +
   ggtitle("Forecasts HW - Global energy (nov10 - dec11") +
@@ -963,7 +1020,7 @@ autoplot(unLog_Global_energy_forecastHW_h13, facets=TRUE) +
   xlab("Year") + ylab("Log_Predicted_Global_Energy") +
   ggtitle("HW:Predicted Global Energy in wh (nov10-dez11)")
 
-#### E.4.2 HoltWinters - assess correlation of errors with lags ####
+#### E.9 HoltWinters - assess correlation of errors with lags - attempt 1 ####
 #Acf(Log_Global_energy_forecastHW_h13)
 ### E: what is this?
 
@@ -975,59 +1032,53 @@ Pacf(Log_Global_energy_forecastHW_h13$residuals, lag.max=20)
 plot.ts(Log_Global_energy_forecastHW_h13$residuals)
 ### C: exception: summer 2008 
 
-#### F.1 ARIMA - chek for stationarity ####
+#### F.1 ARIMA - chek for stationarity - attempt 1 ####
 Log_Global_energy_diff <- diff(Log_Global_energy, differences=1)
+Log_Global_energy_diff
 plot.ts(Log_Global_energy_diff)
 ### C: not stationary
 acf(Log_Global_energy_diff)
 pacf(Log_Global_energy_diff)
+### C: acf - p:2
+### C: pacf - p:2
 
-
-### C: 1 derivada 
-
-Log_Global_energy_diff2 <- diff(Log_Global_energy, differences=2)
-plot.ts(Log_Global_energy_diff2)
+#Log_Global_energy_diff2 <- diff(Log_Global_energy, differences=2)
+#plot.ts(Log_Global_energy_diff2)
 ### C: still not stationary
 
-Log_Global_energy_diff3 <- diff(Log_Global_energy, differences=3)
-plot.ts(Log_Global_energy_diff3)
+#Log_Global_energy_diff3 <- diff(Log_Global_energy, differences=3)
+#plot.ts(Log_Global_energy_diff3)
 
-Log_Global_energy_diff4 <- diff(Log_Global_energy, differences=4)
-plot.ts(Log_Global_energy_diff4)
+#Log_Global_energy_diff4 <- diff(Log_Global_energy, differences=4)
+#plot.ts(Log_Global_energy_diff4)
 
-Log_Global_energy_diff5 <- diff(Log_Global_energy, differences=5)
-plot.ts(Log_Global_energy_diff5)
+#Log_Global_energy_diff5 <- diff(Log_Global_energy, differences=5)
+#plot.ts(Log_Global_energy_diff5)
 
-Log_Global_energy_diff6 <- diff(Log_Global_energy, differences=6)
-plot.ts(Log_Global_energy_diff6)
+#Log_Global_energy_diff6 <- diff(Log_Global_energy, differences=6)
+#plot.ts(Log_Global_energy_diff6)
 
-Log_Global_energy_diff7 <- diff(Log_Global_energy, differences=7)
-plot.ts(Log_Global_energy_diff7)
+#Log_Global_energy_diff7 <- diff(Log_Global_energy, differences=7)
+#plot.ts(Log_Global_energy_diff7)
 
 # (...)
 
-Log_Global_energy_diff25 <- diff(Log_Global_energy, differences=25)
-plot.ts(Log_Global_energy_diff25)
+#Log_Global_energy_diff25 <- diff(Log_Global_energy, differences=25)
+#plot.ts(Log_Global_energy_diff25)
 
-#### F.2 ARIMA - parameters ####
+#### F.2 ARIMA - parameters - attempt 1 ####
 acf(Log_Global_energy_diff10, lag.max=20)
 ### C: p=7/8
 
 pacf(Log_Global_energy_diff10, lag.max=20)
 ### C: p=3
 
-?deriv
-deriv(Log_Global_energy, namevec)
-
 auto.arima(Log_Global_energy)
-### C: I don't know how to interpret
+### C: (1,1,0)
 
 
-### C: hacer arima(....) con parametros definidos
-
-#### G.1 Linear Model Time Series - modelling / forecasting ####
-
-#### G.1.1 Time Series with trend + season ####
+#### G.1 Linear Model Time Series - modelling / forecasting - attempt 1 ####
+#### G.1.1 Time Series with trend + season - attempt 1####
 Log_Global_energy_fit_tslm <- tslm(Log_Global_energy ~ trend + season)
 Log_Global_energy_forecast_tslm <- forecast(Log_Global_energy_fit_tslm)
 plot(Log_Global_energy_forecast_tslm)
@@ -1045,9 +1096,7 @@ Acf(Log_Global_energy_forecast_tslm$residuals, lag.max=20)
 Pacf(Log_Global_energy_forecast_tslm$residuals, lag.max=20)
 ### C: P=1
 
-plot.ts(Log_Global_energy_forecast_tslm$residuals)
-
-#### G.1.2 Time Series with season ####
+#### G.1.2 Time Series with season - attempt 1####
 Log_Global_energy_fit_tslm2 <- tslm(Log_Global_energy ~ season)
 Log_Global_energy_forecast_tslm2 <- forecast(Log_Global_energy_fit_tslm2)
 plot(Log_Global_energy_forecast_tslm2)
@@ -1056,11 +1105,29 @@ autoplot(Log_Global_energy_forecast_tslm2, facets=TRUE) +
   xlab("Year") + ylab("Log_Predicted_Global_Energy") +
   ggtitle("LM2: Predicted Global Energy in wh (nov10-dez11)")
 
-#### H Split dataset - test and training ####
-? tsCV
-tsCV(unLog_Global_energy_forecastHW_h13, Log_Global_energy_forecastHW, h=13)
+#### H. Split dataset - test and training ####
+(tbd)
 
-library(caret)
+
+
+
+library(stats)
+
+36/47 # size of training
+training_month<-subset(Consumption_Month_,Year>=2007 & Year <=2009)
+training_month_ts <- ts(data = training_month, frequency = 12, start = 2007)
+
+12/47 # size of test
+test_month<-subset(Consumption_Month_,Year>=2010)
+test_month_ts <- ts(data=test_month, frequency = 12, start = 2010)
+
+
+ Arima(training, order=c(2,1,1), seasonal=c(0,1,2), lambda=0)
+#cafe.train %>%
+ # forecast(h=60) %>%
+  #autoplot() + autolayer(test)
+
+
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
