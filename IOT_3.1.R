@@ -691,8 +691,15 @@ str(PowerConsumption)
 str(PowerConsumption)
 PowerConsumption_sub <- PowerConsumption %>% filter(Year >= "2007")
 summary(PowerConsumption_sub)
+
+### just created
+PowerConsumption_sub_2 <- PowerConsumption %>% filter(!(Year == "2010" & Month =="11"))
+PowerConsumption_sub_3 <- PowerConsumption_sub_2 %>% filter(Year != "2006")
+summary(PowerConsumption_sub_3)
+
 PowerConsumption_2006 <- PowerConsumption %>% filter(Year == "2006")
 summary(PowerConsumption_2006)
+
 
 #write.table(PowerConsumption_sub, "~/Desktop/UBIQUM/2. Tasks/Course 3/Task 1/Data/PowerConsumption_sub2.txt", col.names=F, row.names =F)
 #write.csv(PowerConsumption_sub, "~/Desktop/UBIQUM/2. Tasks/Course 3/Task 1/Data/PowerConsumption_sub2.csv", col.names=T, row.names =F)
@@ -825,6 +832,8 @@ forecast:::plot.forecast(ts_test2_sub_meter_1_forecast1051_h365)
 
 
 
+
+
 ##### TASK 3.2 - FORECASTING  #####
 #### A. Describe dataset ####
 head(PowerConsumption_sub)
@@ -837,9 +846,12 @@ summary(PowerConsumption_sub)
 ### C: DateTime as POSIXct, Date as Date
 ### C: No NAs - treated as before - na.locf(PowerConsumption$Global_active_power, recursive = TRUE)
 
-#### B.1 Group by month ####
+str(PowerConsumption_sub_3)
+### C: 2016000 obs. of  25 variables
+
+#### B.1 Group by month - recently changed this to PowerConsumption_sub_3 ####  
 library(dplyr)
-Consumption_Month_<- PowerConsumption_sub %>%
+Consumption_Month_<- PowerConsumption_sub_3 %>%
   group_by(Year, Month) %>% 
   summarise(Global_power_wh=sum(Global_power_wh), 
             Global_active_wh = sum(Global_active_power_wh), 
@@ -1105,7 +1117,7 @@ autoplot(Log_Global_energy_forecast_tslm2, facets=TRUE) +
   xlab("Year") + ylab("Log_Predicted_Global_Energy") +
   ggtitle("LM2: Predicted Global Energy in wh (nov10-dez11)")
 
-################# ATTEMPT 2 - TRAINING AND TESTING SETS ############# #####
+################# ATTEMPT 2 - TRAINING AND TESTING SETS ################# #####
 #### H. Split dataset - test and training ####
 library(stats)
 
@@ -1144,7 +1156,7 @@ MRE_traintest_HW_12<-errors_traintest_HW_12/test_month_ts[,3]
 MRE_traintest_HW_12
 plot(MRE_traintest_HW_12)
 
-#### J. ARIMA - attemp 2 (train and test) - BIG ERROR ####
+#### J. ARIMA - attemp 2 (train and test) / INCOMPLETE ####
 plot.ts(diff(training_month_ts_global_power, differences=1))
 plot.ts(diff(training_month_ts_global_power, differences=2))
 plot.ts(diff(training_month_ts_global_power, differences=3))
@@ -1230,7 +1242,7 @@ autoplot(MRE_traintest_arima010)
 
 
 
-##### ATTEMPT 3 - TRAINING AND TESTING SETS // GLOBAL ACTIVE ENERGY ####
+################# ATTEMPT 3 - GLOBAL ACTIVE ENERGY ################# ####
 #### M. Check distribution #### 
 summary(Consumption_Month_)
 View(Consumption_Month_)
@@ -1317,16 +1329,49 @@ plot(Forecast_HW_ActivePower_wh_month$residuals)
 hist(Forecast_HW_ActivePower_wh_month$residuals)
 ### C: a little bit skewed - due to the overestimatin of december 2009
 
-forecast:::plot.forecast(Forecast_HW_ActivePower_wh_month)
+autoplot(Forecast_HW_ActivePower_wh_month)
 ### C: model predicts badly the first month / dec 2010
 Forecast_HW_ActivePower_wh_month$fitted
 
-#### R.1 tslm - active #### 
-plot(tslm(ActivePower_wh_ts_month ~ trend + season))
+#### R.1 TSLM - modelling - active #### 
+tslm(ActivePower_wh_ts_month ~ trend + season)
+
 ### E: I cant get the graphic // Hit <Return> to see next plot: 
 
+#### R.2 TSLM - forecasting - active #### 
 LM_ActivePower_wh_month <- tslm(ActivePower_wh_ts_month ~ trend + season)
-plot(LM_ActivePower_wh_month)
+forecast(LM_ActivePower_wh_month, h=13)
+Forecast_LM_ActivePower_wh_month <- forecast(LM_ActivePower_wh_month, h=13)
+autoplot(Forecast_LM_ActivePower_wh_month)
+
+# residuals
+Forecast_LM_ActivePower_wh_month$residuals
+### C: I dont have NAS in the first 12 observations/predictions
+hist(Forecast_LM_ActivePower_wh_month$residuals)
+### C: normal distribution of residuals
+
+#### S.1 ARIMA - modelling - active #### 
+plot.ts(diff(ActivePower_wh_ts_month, differences=1))
+plot.ts(diff(ActivePower_wh_ts_month, differences=2))
+### C: p=1
+dif_ActivePower_wh_ts_month <- diff(ActivePower_wh_ts_month, differences=1)
+
+acf(dif_ActivePower_wh_ts_month, lag.max=20)
+q=1
+pacf(dif_ActivePower_wh_ts_month, lag.max=20)
+p=2
+
+#### S.2 ARIMA - forecasting - active #### 
+auto.arima(dif_ActivePower_wh_ts_month)
+### C: ARIMA(3,0,0)(1,1,0)[12]
+arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,1,0)))
+ARIMA_ActivePower_wh_month <- arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,1,0)))
+
+Forecast_ARIMA_ActivePower_wh_month <- forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=13)
+autoplot(Forecast_ARIMA_ActivePower_wh_month)
+
+
+### E: I cant get the graphic // Hit <Return> to see next plot: 
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
