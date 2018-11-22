@@ -1401,19 +1401,55 @@ Forecast_train_HW_ActivePower_wh_month$fitted
 hist(Forecast_train_HW_ActivePower_wh_month$residuals)
 ### C: not normally distributted
 
-## absolute and relative errors
+# absolute arror
 train_forecast_HW_2010 <- data.frame(Forecast_train_HW_ActivePower_wh_month)[,1]
 
-# absolute error
 abs_errors_forecast_HW_active_2010 <- train_forecast_HW_2010 - ActivePower_wh_month_testing
 autoplot(abs_errors_forecast_HW_active_2010)
+mean(abs(abs_errors_forecast_HW_active_2010))
+### C: MAE - 58,079.52
 
 # relative error
 relative_errors_forecast_HW_active_2010 <- abs_errors_forecast_HW_active_2010/ActivePower_wh_month_testing
 plot(relative_errors_forecast_HW_active_2010)
+mean(relative_errors_forecast_HW_active_2010)
+mean(abs(relative_errors_forecast_HW_active_2010))
+### C: MRE - 0.07809852
 
 #### V.1 ts Linear Model - modeling // active energy - test and train ####
+tslm(ActivePower_wh_month_training ~ trend + season)
 
+train_LM_ActivePower_wh_month <- tslm(ActivePower_wh_month_training ~ trend + season)
+train_LM_ActivePower_wh_month$fitted
+
+#### V.2 ts Linear Model - forecasting // active energy - test and train ####
+forecast(train_LM_ActivePower_wh_month, h=10)
+Forecast_train_LM_ActivePower_wh_month <- forecast(train_LM_ActivePower_wh_month, h=10)
+autoplot(Forecast_train_LM_ActivePower_wh_month)
+hist(Forecast_train_LM_ActivePower_wh_month$residuals)
+### not so linearly distributed 
+
+# absolute error
+ActivePower_wh_month_testing
+train_forecast_LM_2010 <- data.frame(Forecast_train_LM_ActivePower_wh_month)[,1]
+
+abs_errors_forecast_LM_active_2010 <- train_forecast_LM_2010-ActivePower_wh_month_testing
+abs_errors_forecast_LM_active_2010
+autoplot(abs_errors_forecast_LM_active_2010)
+mean(abs(abs_errors_forecast_LM_active_2010))
+### C: MAE - 65,492.83
+
+# relative error
+relative_errors_forecast_LM_active_2010 <- abs_errors_forecast_LM_active_2010 / ActivePower_wh_month_testing
+relative_errors_forecast_LM_active_2010
+autoplot(relative_errors_forecast_LM_active_2010)
+mean(abs(relative_errors_forecast_LM_active_2010))
+### C: MRE - 0.09359678
+
+#### TO DOs ####
+# comparar errors e modelos : autoplot () + autolayer
+# fazer igual para reactive energy 
+# fazer um modelo que e a combinação dos outros
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
