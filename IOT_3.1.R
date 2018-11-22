@@ -1,4 +1,4 @@
-#### TASK 3.1 #####
+############################################ TASK 3.1 ############################################
 # Define a Data Science Process
 # Joana
 # 09/11 - 14/11
@@ -440,13 +440,7 @@ summary(PowerConsumption_Day_of_week)
 
 
 
-#### Task 3.2 #### 
-
-#### 9.6 Create a subsample of the dataset - from this date to this date
-
-#PowerConsumption_c %>% filter(Date >= dmy("16/12/2007")) 
-#ggplot(PowerConsumption_Month, aes(x=Month))+geom_line(aes(y=Global_power_wh))+geom_line(aes(y=Global_active_power_wh))
-
+############################################ TASK 3.2 - FORECASTING ############################################
 #### 1. Try filtering data by date - test #### 
 
 #PowerConsumption_test <- PowerConsumption_double
@@ -834,7 +828,8 @@ forecast:::plot.forecast(ts_test2_sub_meter_1_forecast1051_h365)
 
 
 
-##### TASK 3.2 - FORECASTING  #####
+
+###################### ATTEMPT 1  - GLOBAL POWER // ALL DATASET #################
 #### A. Describe dataset ####
 head(PowerConsumption_sub)
 str(PowerConsumption_sub)
@@ -1117,7 +1112,8 @@ autoplot(Log_Global_energy_forecast_tslm2, facets=TRUE) +
   xlab("Year") + ylab("Log_Predicted_Global_Energy") +
   ggtitle("LM2: Predicted Global Energy in wh (nov10-dez11)")
 
-################# ATTEMPT 2 - TRAINING AND TESTING SETS ################# #####
+
+###################### ATTEMPT 2 - GLOBAL POWER - TRAINING AND TESTING SETS ################# #####
 #### H. Split dataset - test and training ####
 library(stats)
 
@@ -1242,7 +1238,8 @@ autoplot(MRE_traintest_arima010)
 
 
 
-################# ATTEMPT 3 - GLOBAL ACTIVE ENERGY ################# ####
+
+###################### ATTEMPT 3 - GLOBAL ACTIVE ENERGY  // ALL DATASET ################# ####
 #### M. Check distribution #### 
 summary(Consumption_Month_)
 View(Consumption_Month_)
@@ -1251,7 +1248,6 @@ summary(Consumption_Month_$Global_active_wh)
 plot(Consumption_Month_$Global_active_wh)
 Consumption_Month_$Global_active_wh
 ### C: i=20
-
 #### N. Deal with outlier - global active and global reactive ####
 
 # global active
@@ -1274,7 +1270,6 @@ data.frame(select(Consumption_Month_,Global_power_wh, Month, Year)) %>% filter(M
 ### E : still wrong for august ??? - ignore global power
 
 # global reactive 
-
 plot(Consumption_Month_$Global_reactive_wh)
 ### C: no outlier on august 2008
 
@@ -1303,6 +1298,7 @@ Consumption_Month_ts_2[,5]
 ReactivePower_wh_ts_month<-Consumption_Month_ts_2[,5]
 plot(ReactivePower_wh_ts_month)
 plot(log(ReactivePower_wh_ts_month))
+ggseasonplot(ReactivePower_wh_ts_month, season.labels = TRUE, year.labels = TRUE, year.labels.left = TRUE, continuous = FALSE)
 ### C: no need to smoothing / correct for multiplicative effect
 
 #### P. Decompose ts - active #### 
@@ -1313,16 +1309,16 @@ plot(ActivePower_wh_ts_month_decomp)
 #### Q.1 HW modelling - active ####
 library(forecast)
 HoltWinters(ActivePower_wh_ts_month)
-### C: alpha: 0.06618736, beta : 0.1312143, gamma: 0.4814238 - seasonality component gives more weight to last observations
-plot(HoltWinters(ActivePower_wh_ts_month)) 
-### C: more errors in the winter 2008, overestimates the consumption. also, it doesn't expects consumption in winter 2010 to fall
+### C: alpha: 0.09578282, beta : 0.04570365, gamma: 0.5545159 - seasonality component gives more weight to last observations
+plot(HoltWinters(ActivePower_wh_ts_month))
+### C: more errors in the winter 2008, overestimates the consumption.
 HW_ActivePower_wh_month <- HoltWinters(ActivePower_wh_ts_month)
 plot(HW_ActivePower_wh_month)
 HW_ActivePower_wh_month$fitted
 
 #### Q.2 HW forecasting - active ####
-forecast:::forecast.HoltWinters(HW_ActivePower_wh_month, h=13)
-Forecast_HW_ActivePower_wh_month <- forecast:::forecast.HoltWinters(HW_ActivePower_wh_month, h=13)
+forecast:::forecast.HoltWinters(HW_ActivePower_wh_month, h=14)
+Forecast_HW_ActivePower_wh_month <- forecast:::forecast.HoltWinters(HW_ActivePower_wh_month, h=14)
 
 plot(Forecast_HW_ActivePower_wh_month$residuals)
 ### C: confirm what I have seen about models' missperformance
@@ -1335,13 +1331,12 @@ Forecast_HW_ActivePower_wh_month$fitted
 
 #### R.1 TSLM - modelling - active #### 
 tslm(ActivePower_wh_ts_month ~ trend + season)
-
 ### E: I cant get the graphic // Hit <Return> to see next plot: 
 
 #### R.2 TSLM - forecasting - active #### 
 LM_ActivePower_wh_month <- tslm(ActivePower_wh_ts_month ~ trend + season)
-forecast(LM_ActivePower_wh_month, h=13)
-Forecast_LM_ActivePower_wh_month <- forecast(LM_ActivePower_wh_month, h=13)
+forecast(LM_ActivePower_wh_month, h=14)
+Forecast_LM_ActivePower_wh_month <- forecast(LM_ActivePower_wh_month, h=14)
 autoplot(Forecast_LM_ActivePower_wh_month)
 
 # residuals
@@ -1353,25 +1348,72 @@ hist(Forecast_LM_ActivePower_wh_month$residuals)
 #### S.1 ARIMA - modelling - active #### 
 plot.ts(diff(ActivePower_wh_ts_month, differences=1))
 plot.ts(diff(ActivePower_wh_ts_month, differences=2))
-### C: p=1
-dif_ActivePower_wh_ts_month <- diff(ActivePower_wh_ts_month, differences=1)
+### C: p=2
+dif_ActivePower_wh_ts_month <- diff(ActivePower_wh_ts_month, differences=2)
 
 acf(dif_ActivePower_wh_ts_month, lag.max=20)
-q=1
+q=2/3
 pacf(dif_ActivePower_wh_ts_month, lag.max=20)
-p=2
+p=0
 
 #### S.2 ARIMA - forecasting - active #### 
 auto.arima(dif_ActivePower_wh_ts_month)
 ### C: ARIMA(3,0,0)(1,1,0)[12]
-arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,1,0)))
-ARIMA_ActivePower_wh_month <- arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,1,0)))
+arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,0,0)))
+ARIMA_ActivePower_wh_month <- arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,0,0)))
 
-Forecast_ARIMA_ActivePower_wh_month <- forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=13)
+plot(ARIMA_ActivePower_wh_month)
+#### E: I cant plot it // cant understand
+Forecast_ARIMA_ActivePower_wh_month <- forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
 autoplot(Forecast_ARIMA_ActivePower_wh_month)
 
+Forecast_ARIMA_ActivePower_wh_month$residuals
+hist(Forecast_ARIMA_ActivePower_wh_month$residuals)
+### C: Normally distributed
 
-### E: I cant get the graphic // Hit <Return> to see next plot: 
+
+###################### ATTEMPT 4 - GLOBAL ACTIVE ENERGY // TRAINING AND TESTING SETS #####################
+#### T. testing and training datasets - active energy #### 
+training_month_ts
+test_month_ts
+
+training_month_ts[,4]
+test_month_ts[,4]
+
+ActivePower_wh_month_training <- training_month_ts[,4]
+ActivePower_wh_month_testing <- test_month_ts[,4]
+
+#### U.1 HW - modeling // active energy - test and train ####
+HoltWinters(ActivePower_wh_month_training)
+### C:  alpha: 0, beta : 0, gamma: 0.313282
+plot(HoltWinters(ActivePower_wh_month_training))
+### C: as expected, it doesnt show the initial and last observations
+
+train_HW_ActivePower_wh_month <- HoltWinters(ActivePower_wh_month_training)
+train_HW_ActivePower_wh_month$fitted
+
+#### U.2 HW - forecasting // active energy - test and train ####
+## predict 2010
+forecast:::forecast.HoltWinters(train_HW_ActivePower_wh_month, h=10)
+Forecast_train_HW_ActivePower_wh_month <- forecast:::forecast.HoltWinters(train_HW_ActivePower_wh_month, h=10)
+autoplot(Forecast_train_HW_ActivePower_wh_month)
+Forecast_train_HW_ActivePower_wh_month$fitted
+hist(Forecast_train_HW_ActivePower_wh_month$residuals)
+### C: not normally distributted
+
+## absolute and relative errors
+train_forecast_HW_2010 <- data.frame(Forecast_train_HW_ActivePower_wh_month)[,1]
+
+# absolute error
+abs_errors_forecast_HW_active_2010 <- train_forecast_HW_2010 - ActivePower_wh_month_testing
+autoplot(abs_errors_forecast_HW_active_2010)
+
+# relative error
+relative_errors_forecast_HW_active_2010 <- abs_errors_forecast_HW_active_2010/ActivePower_wh_month_testing
+plot(relative_errors_forecast_HW_active_2010)
+
+#### V.1 ts Linear Model - modeling // active energy - test and train ####
+
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
