@@ -440,6 +440,7 @@ summary(PowerConsumption_Day_of_week)
 
 
 
+
 ############################################ TASK 3.2 - FORECASTING ############################################
 #### 1. Try filtering data by date - test #### 
 
@@ -1121,6 +1122,10 @@ library(stats)
 training_month<-subset(Consumption_Month_,Year>=2007 & Year <=2009)
 training_month_ts <- ts(data = training_month, frequency = 12, start = 2007)
 
+plot(Consumption_Month_$Global_active_wh)
+plot(training_month$Global_active_wh)
+training_month_ts
+
 12/47 # size of test
 test_month<-subset(Consumption_Month_,Year>=2010)
 test_month_ts <- ts(data=test_month, frequency = 12, start = 2010)
@@ -1234,6 +1239,7 @@ autoplot(MRE_traintest_ts)
 ### C: quite similar performances
 autoplot(MRE_traintest_arima010)
 ### C: ignore MRE of arima
+
 
 
 
@@ -1359,12 +1365,15 @@ p=0
 #### S.2 ARIMA - forecasting - active #### 
 auto.arima(dif_ActivePower_wh_ts_month)
 ### C: ARIMA(3,0,0)(1,1,0)[12]
-arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,0,0)))
+auto.arima(ActivePower_wh_month)
+### C: ARIMA(0,0,0)(1,1,0)[12] 
+arima(ActivePower_wh_ts_month, order=c(0,0,0), seasonal =list(order=c(1,1,0)))
 ARIMA_ActivePower_wh_month <- arima(ActivePower_wh_ts_month, order=c(3,0,0), seasonal =list(order=c(1,0,0)))
+ARIMA_auto_ActivePower_wh_month <- ARIMA_ActivePower_wh_month 
 
-plot(ARIMA_ActivePower_wh_month)
+plot(ARIMA_auto_ActivePower_wh_month)
 #### E: I cant plot it // cant understand
-Forecast_ARIMA_ActivePower_wh_month <- forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
+Forecast_ARIMA_ActivePower_wh_month <- forecast:::forecast.Arima(ARIMA_auto_ActivePower_wh_month, h=14)
 autoplot(Forecast_ARIMA_ActivePower_wh_month)
 
 Forecast_ARIMA_ActivePower_wh_month$residuals
@@ -1407,14 +1416,14 @@ train_forecast_HW_2010 <- data.frame(Forecast_train_HW_ActivePower_wh_month)[,1]
 abs_errors_forecast_HW_active_2010 <- train_forecast_HW_2010 - ActivePower_wh_month_testing
 autoplot(abs_errors_forecast_HW_active_2010)
 mean(abs(abs_errors_forecast_HW_active_2010))
-### C: MAE - 58,079.52
+### C: MAE - 61,686.98
 
 # relative error
 relative_errors_forecast_HW_active_2010 <- abs_errors_forecast_HW_active_2010/ActivePower_wh_month_testing
 plot(relative_errors_forecast_HW_active_2010)
 mean(relative_errors_forecast_HW_active_2010)
 mean(abs(relative_errors_forecast_HW_active_2010))
-### C: MRE - 0.07809852
+### C: MRE - 0.08284149
 
 #### V.1 ts Linear Model - modeling // active energy - test and train ####
 tslm(ActivePower_wh_month_training ~ trend + season)
@@ -1437,14 +1446,30 @@ abs_errors_forecast_LM_active_2010 <- train_forecast_LM_2010-ActivePower_wh_mont
 abs_errors_forecast_LM_active_2010
 autoplot(abs_errors_forecast_LM_active_2010)
 mean(abs(abs_errors_forecast_LM_active_2010))
-### C: MAE - 65,492.83
+### C: MAE - 57345.84
 
 # relative error
 relative_errors_forecast_LM_active_2010 <- abs_errors_forecast_LM_active_2010 / ActivePower_wh_month_testing
 relative_errors_forecast_LM_active_2010
 autoplot(relative_errors_forecast_LM_active_2010)
 mean(abs(relative_errors_forecast_LM_active_2010))
-### C: MRE - 0.09359678
+### C: MRE - 0.0765351
+
+#### W.1 ARIMA - modeling // active energy - test and train ####
+ActivePower_wh_month_training
+autoplot(ActivePower_wh_month_training)
+auto.arima(ActivePower_wh_month_training)
+### C: The chosen test encountered an error, so no seasonal differencing is selected. Check the time series data.
+train_ARIMA_ActivePower_wh_month<-arima(ActivePower_wh_month_training, order = c(0,0,0), seasonal=list(order=c(1,1,0)))
+
+#### W.2 ARIMA - forecasting // active energy - test and train ####
+forecast:::forecast.Arima(train_ARIMA_ActivePower_wh_month, h=10)
+Forecast_train_ARIMA_ActivePower_wh_month <- forecast:::forecast.Arima(train_ARIMA_ActivePower_wh_month, h=10)
+autoplot(Forecast_train_ARIMA_ActivePower_wh_month)
+
+Forecast_train_ARIMA_ActivePower_wh_month$residuals
+hist(Forecast_train_ARIMA_ActivePower_wh_month$residuals)
+### C: not so normally distributted
 
 #### TO DOs ####
 # comparar errors e modelos : autoplot () + autolayer
