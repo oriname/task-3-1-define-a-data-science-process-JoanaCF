@@ -73,7 +73,6 @@ PowerConsumption$Date <- dmy(PowerConsumption$Date)
 # 5.1 Global_power
 PowerConsumption$Global_power=(PowerConsumption$Global_active_power+ PowerConsumption$Global_reactive_power)
 
-
 #5.1.1 Global power in watt hour 
 PowerConsumption$Global_power_wh = PowerConsumption$Global_power*1000/60
 
@@ -662,10 +661,6 @@ sum(is.na(PowerConsumption$Sub_metering_3))
 PowerConsumption$Global_power <- PowerConsumption$Global_active_power + PowerConsumption$Global_reactive_power
 summary(PowerConsumption$Global_power)
 
-# Global_power_wh
-PowerConsumption$Global_power_wh = PowerConsumption$Global_power*1000/60
-summary(PowerConsumption$Global_power_wh)
-
 # Global_active_power_wh
 PowerConsumption$Global_active_power_wh <- PowerConsumption$Global_active_power*1000/60
 summary(PowerConsumption$Global_active_power_wh)
@@ -673,6 +668,10 @@ summary(PowerConsumption$Global_active_power_wh)
 # Global_reactive_power_wh
 PowerConsumption$Global_reactive_power_wh <- PowerConsumption$Global_reactive_power*1000/60
 summary(PowerConsumption$Global_reactive_power_wh)
+
+# Global_power_wh
+PowerConsumption$Global_power_wh = PowerConsumption$Global_reactive_power_wh + PowerConsumption$Global_active_power_wh
+summary(PowerConsumption$Global_power_wh)
 
 # Global_sub_meter
 PowerConsumption$Global_Sub_metering <- PowerConsumption$Sub_metering_1 + PowerConsumption$Sub_metering_2 + PowerConsumption$Sub_metering_3
@@ -824,6 +823,8 @@ forecast:::plot.forecast(ts_test2_sub_meter_1_forecast1051_h365)
 
 
 
+
+
 ##### TASK 3.2 - FORECASTING  #####
 #### A. Describe dataset ####
 head(PowerConsumption_sub)
@@ -900,9 +901,7 @@ min(select(Global_power_wh_Aug %>% filter(Year != 2008), Global_power_wh, Year)[
 ### C: 557203.4
 min_global_power_wh_aug <- min(select(Global_power_wh_Aug %>% filter(Year != 2008), Global_power_wh, Year)[,1])
 
-Consumption_Month_$Global_power_wh <- ifelse(Consumption_Month_$Month == 8 & Consumption_Month_$Year == 2008,
-                                             min_global_power_wh_aug,
-                                             Consumption_Month_$Global_power_wh) 
+Consumption_Month_$Global_power_wh <- ifelse(Consumption_Month_$Month == 8 & Consumption_Month_$Year == 2008,min_global_power_wh_aug, Consumption_Month_$Global_power_wh) 
 head(Consumption_Month_$Global_power_wh)
 select(Consumption_Month_ %>% filter(Month==8), Global_power_wh)
 
@@ -945,7 +944,7 @@ plot.ts(Consumption_Month_ts[,9:10],plot.type= "s", col=1:2, main="Evolution of 
 ### C: sub-meter and no sub-meter: multiplicative, no constant mean, seasonality and some randomness
 
 
-#### E. Focus on Global energy #### 
+#### E. Focus on Global energy // CAREFUL - I HAVE RUN IT AGAIN WITH THE NEW VARIABLE (ACTIVE + REACTIVE) AND HAVENT CHECKED THE RESULTS #### 
 
 #### E.1 Correcting for some multiplicative elements ####
 Log_Global_energy <-log(Consumption_Month_ts[,3])
@@ -954,6 +953,7 @@ plot(Log_Global_energy)
 ggseasonplot(Log_Global_energy, season.labels = TRUE, year.labels = TRUE, year.labels.left = TRUE, continuous = FALSE)
 
 #### E.2 Decomposing ####
+? decompose
 decompose(Log_Global_energy)
 ### C: confirmed: addtitive
 Log_Global_energy_decomp <- decompose(Log_Global_energy)
@@ -1009,7 +1009,6 @@ max(Consumption_Month_$Global_active_wh)
 ### C: 1,210,092 wh
 
 #### E.8 HoltWinters - ploting errors - attempt 1 ####
-Log_Global_energy_forecastHW_h13
 Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2]
 hist(Log_Global_energy_forecastHW$fitted[,1]-Log_Global_energy_forecastHW$fitted[,2])
 
@@ -1106,6 +1105,7 @@ autoplot(Log_Global_energy_forecast_tslm2, facets=TRUE) +
   xlab("Year") + ylab("Log_Predicted_Global_Energy") +
   ggtitle("LM2: Predicted Global Energy in wh (nov10-dez11)")
 
+################# ATTEMPT 2 - TRAINING AND TESTING SETS ############# #####
 #### H. Split dataset - test and training ####
 library(stats)
 
@@ -1125,7 +1125,7 @@ plot(training_month_ts_global_power)
 
 traing_month_ts_global_power_HW_forecast <-HoltWinters(training_month_ts_global_power)
 traing_month_ts_global_power_HW_forecast$SSE
-plot(Log_Global_energy_forecastHW)
+plot(traing_month_ts_global_power_HW_forecast)
 # E:152108397057
 
 ## predicting - 2010
@@ -1138,9 +1138,195 @@ test_month_ts[,3]
 traing_month_ts_global_power_HW_forecast_12
 df_traing_month_ts_global_power_HW_forecast_12<-data.frame(traing_month_ts_global_power_HW_forecast_12)
 errors_traintest_HW_12 <- df_traing_month_ts_global_power_HW_forecast_12[1:11,2]-test_month_ts[,3]
+plot(errors_traintest_HW_12)
+
 MRE_traintest_HW_12<-errors_traintest_HW_12/test_month_ts[,3]
 MRE_traintest_HW_12
 plot(MRE_traintest_HW_12)
+
+#### J. ARIMA - attemp 2 (train and test) - BIG ERROR ####
+plot.ts(diff(training_month_ts_global_power, differences=1))
+plot.ts(diff(training_month_ts_global_power, differences=2))
+plot.ts(diff(training_month_ts_global_power, differences=3))
+diff_training_month_ts_global_power <-diff(training_month_ts_global_power, differences=1)
+plot.ts(diff(training_month_ts_global_power, differences=4))
+### C: d = 1 / ARIMA(p,1,q)
+
+acf(diff_training_month_ts_global_power, lag.max=20)
+### C: q=
+pacf(diff_training_month_ts_global_power,lag.max=20)
+### C: p=3
+auto.arima(training_month_ts_global_power)
+plot.ts(training_month_ts_global_power)
+
+### W: dont know what this is
+
+library(forecast)
+traing_month_ts_global_power_arima_010<-arima(training_month_ts_global_power, order=c(0,1,0))
+forecast:::forecast.Arima(traing_month_ts_global_power_arima_010, h=12)
+traing_month_ts_global_power_arima_010_forecast <-forecast:::forecast.Arima(traing_month_ts_global_power_arima_010, h=12)
+plot(traing_month_ts_global_power_arima_010_forecast)
+### E: always the same forecast points
+
+data.frame(traing_month_ts_global_power_arima_010_forecast)
+df.traing_month_ts_global_power_arima_010_forecast<-data.frame(traing_month_ts_global_power_arima_010_forecast)
+df.traing_month_ts_global_power_arima_010_forecast[1:11,1]
+### E: always the same forecast points
+
+errors_traintest_arima_010 <- df.traing_month_ts_global_power_arima_010_forecast[1:11,1]-test_month_ts[,3]
+errors_traintest_arima_010
+MRE_traintest_arima010 <- errors_traintest_arima_010/test_month_ts[,3]
+plot(MRE_traintest_arima010)
+### E: 
+
+
+#### K. TSLM - attemp 2 (train and test) ####
+# predict 2010
+?tslm
+training_Global_energy_fit_tslm <- tslm(training_month_ts_global_power ~ trend + season)
+plot(training_Global_energy_fit_tslm)
+### E: doesnt work
+training_Global_energy_forecast_tslm <- forecast(training_Global_energy_fit_tslm, h=12)
+training_Global_energy_forecast_tslm
+#plot(training_Global_energy_forecast_tslm$fitted)
+
+# compute errors
+df.training_month_ts_global_power_tslm_forecast <- data.frame(training_Global_energy_forecast_tslm)
+df.training_month_ts_global_power_tslm_forecast[1:11,1]
+df.training_month_ts_global_power_tslm_forecast[1:11,1]-test_month_ts[,3]
+errors_traintest_tslm <- df.training_month_ts_global_power_tslm_forecast[1:11,1]-test_month_ts[,3]
+plot(errors_traintest_tslm)
+MRE_traintest_ts <- errors_traintest_tslm/test_month_ts[,3]
+
+#### L. Compare models performance ####
+plot(MRE_traintest_HW_12)
+plot(MRE_traintest_ts)
+plot(MRE_traintest_arima010)
+
+mean(MRE_traintest_HW_12)
+mean(MRE_traintest_ts)
+mean(MRE_traintest_arima010)
+
+# Forecasts 12 months
+plot(traing_month_ts_global_power_HW_forecast_12)
+plot(training_Global_energy_forecast_tslm)
+plot(traing_month_ts_global_power_arima_010_forecast)
+
+plot(traing_month_ts_global_power_HW_forecast)
+### E: I could not plot the a similar graph for the other models
+
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(lattice)
+
+test_MRE<-grid.arrange(MRE_traintest_HW_12, MRE_traintest_ts)
+autoplot(MRE_traintest_HW_12)
+autoplot(MRE_traintest_ts)
+### C: quite similar performances
+autoplot(MRE_traintest_arima010)
+### C: ignore MRE of arima
+
+
+
+
+##### ATTEMPT 3 - TRAINING AND TESTING SETS // GLOBAL ACTIVE ENERGY ####
+#### M. Check distribution #### 
+summary(Consumption_Month_)
+View(Consumption_Month_)
+summary(Consumption_Month_$Global_active_wh)
+### C: min: 205,740 wh / max: 1,210,092 wh 
+plot(Consumption_Month_$Global_active_wh)
+Consumption_Month_$Global_active_wh
+### C: i=20
+
+#### N. Deal with outlier - global active and global reactive ####
+
+# global active
+Consumption_Month_ %>% filter(Month==8)
+data.frame(select(Consumption_Month_,Global_active_wh, Month, Year)) %>% filter(Month==8) 
+### E: min: 2008 - 205740.1 // 2010 - 477502.2 
+
+Consumption_Month_$Global_active_wh <- ifelse(Consumption_Month_$Month == 8 & Consumption_Month_$Year ==2008, 477502.2, Consumption_Month_$Global_active_wh) 
+head(Consumption_Month_$Global_active_wh)
+min(Consumption_Month_$Global_active_wh)
+plot(Consumption_Month_$Global_active_wh)
+
+head(Consumption_Month_$Global_active_wh)
+head(Consumption_Month_$Global_power_wh)
+head(Consumption_Month_$Global_reactive_wh)
+
+data.frame(select(Consumption_Month_,Global_active_wh, Month, Year)) %>% filter(Month==8) 
+data.frame(select(Consumption_Month_,Global_reactive_wh, Month, Year)) %>% filter(Month==8) 
+data.frame(select(Consumption_Month_,Global_power_wh, Month, Year)) %>% filter(Month==8) 
+### E : still wrong for august ??? - ignore global power
+
+# global reactive 
+
+plot(Consumption_Month_$Global_reactive_wh)
+### C: no outlier on august 2008
+
+#### O. New time series #### 
+library(stats)
+ts(data = Consumption_Month_,frequency = 12, start = 2007)
+Consumption_Month_ts_2 <- ts(data = Consumption_Month_,frequency = 12, start = 2007)
+
+str(Consumption_Month_ts_2)
+plot(Consumption_Month_ts_2[,3:12])
+plot(Consumption_Month_ts_2[,4:5])
+### C: distribution of active and reactive power
+
+# active
+ActivePower_wh_ts_month<-Consumption_Month_ts_2[,4]
+ActivePower_wh_ts_month
+plot(ActivePower_wh_ts_month)
+plot(log(ActivePower_wh_ts_month))
+### C: no need to smoothing / correct for multiplicative effect
+ggseasonplot(ActivePower_wh_ts_month, season.labels = TRUE, year.labels = TRUE, year.labels.left = TRUE, continuous = FALSE)
+### C: confirmed no outlier 
+
+# reactive
+plot(Consumption_Month_ts_2[,4:5])
+Consumption_Month_ts_2[,5]
+ReactivePower_wh_ts_month<-Consumption_Month_ts_2[,5]
+plot(ReactivePower_wh_ts_month)
+plot(log(ReactivePower_wh_ts_month))
+### C: no need to smoothing / correct for multiplicative effect
+
+#### P. Decompose ts - active #### 
+ActivePower_wh_ts_month_decomp <- decompose(ActivePower_wh_ts_month)
+plot(ActivePower_wh_ts_month_decomp)
+### C: random is short, trend is short - clear seasonality, descending trend
+
+#### Q.1 HW modelling - active ####
+library(forecast)
+HoltWinters(ActivePower_wh_ts_month)
+### C: alpha: 0.06618736, beta : 0.1312143, gamma: 0.4814238 - seasonality component gives more weight to last observations
+plot(HoltWinters(ActivePower_wh_ts_month)) 
+### C: more errors in the winter 2008, overestimates the consumption. also, it doesn't expects consumption in winter 2010 to fall
+HW_ActivePower_wh_month <- HoltWinters(ActivePower_wh_ts_month)
+plot(HW_ActivePower_wh_month)
+HW_ActivePower_wh_month$fitted
+
+#### Q.2 HW forecasting - active ####
+forecast:::forecast.HoltWinters(HW_ActivePower_wh_month, h=13)
+Forecast_HW_ActivePower_wh_month <- forecast:::forecast.HoltWinters(HW_ActivePower_wh_month, h=13)
+
+plot(Forecast_HW_ActivePower_wh_month$residuals)
+### C: confirm what I have seen about models' missperformance
+hist(Forecast_HW_ActivePower_wh_month$residuals)
+### C: a little bit skewed - due to the overestimatin of december 2009
+
+forecast:::plot.forecast(Forecast_HW_ActivePower_wh_month)
+### C: model predicts badly the first month / dec 2010
+Forecast_HW_ActivePower_wh_month$fitted
+
+#### R.1 tslm - active #### 
+plot(tslm(ActivePower_wh_ts_month ~ trend + season))
+### E: I cant get the graphic // Hit <Return> to see next plot: 
+
+LM_ActivePower_wh_month <- tslm(ActivePower_wh_ts_month ~ trend + season)
+plot(LM_ActivePower_wh_month)
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
