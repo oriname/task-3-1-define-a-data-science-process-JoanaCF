@@ -3,7 +3,6 @@
 # Joana
 # 09/11 - 14/11
 # IOT Analytics
-
 #### General goal ####
 # Develop analytics for a new set of electrical sub-metering devices, which measure power consumption and energy usage. 
 # To create "smart homes" that provide home owners with analytics on their power usage.
@@ -437,7 +436,6 @@ summary(PowerConsumption_Day_of_week)
 #ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Sub_metering_2, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set2") 
 #ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Sub_metering_3, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set2") 
 #ggplot(PowerConsumption_Day_of_week, aes(x=Day_of_week, y=Global_active_power_wh, fill=Day_of_week))+geom_bar(stat = "identity")+ scale_fill_brewer(palette="Set3") 
-
 
 
 
@@ -1487,17 +1485,8 @@ autoplot(relative_errors_forecast_ARIMA_active_2010)
 mean(abs(relative_errors_forecast_ARIMA_active_2010))
 ### C: MRE - 0.07015942
 
-#### X. Comparing models ####
+#### X. Comparing models // active energy - test and train ####
 
-#### X.1 ActivePower_wh_month ####
-## HW
-autoplot(Forecast_HW_ActivePower_wh_month)
-## LM
-autoplot(Forecast_LM_ActivePower_wh_month)
-## ARIMA
-autoplot(Forecast_ARIMA_ActivePower_wh_month)
-
-#### X.2 ActivePower_wh_month - TRAIN AND TEST ####
 ## HW
 autoplot(Forecast_train_HW_ActivePower_wh_month)
 ### C: MAE - 61,686.98 § MRE - 0.083
@@ -1525,6 +1514,7 @@ plot(relative_errors_forecast_ARIMA_active_2010)
 autoplot (Forecast_train_ARIMA_ActivePower_wh_month, PI =FALSE) + autolayer(ActivePower_wh_month_testing, series="Dataset")
 autoplot (Forecast_train_ARIMA_ActivePower_wh_month, PI =TRUE) + autolayer(ActivePower_wh_month_testing, series="Dataset")
 
+## ALL
 autoplot (ActivePower_wh_month, series="Real data") + autolayer(Forecast_train_LM_ActivePower_wh_month, series="LM", PI= FALSE) + autolayer(Forecast_train_ARIMA_ActivePower_wh_month, PI =FALSE, series = "ARIMA") + autolayer(Forecast_train_HW_ActivePower_wh_month, PI =FALSE, series = "HW")
 
 accuracy(Forecast_train_HW_ActivePower_wh_month,ActivePower_wh_month_testing, test = NULL)
@@ -1534,23 +1524,22 @@ accuracy(Forecast_train_ARIMA_ActivePower_wh_month,ActivePower_wh_month_testing,
 ### C: BEST MODEL IS ARIMA
 
 #### Y. Combining models ####
-install.packages("opera")
-library(opera)
+#install.packages("opera")
+#library(opera)
 
-install.packages("forecastHybrid")
-library(forecastHybrid)
-Hybrid_models <-hybridModel(ActivePower_wh_month, weights="equal")
+#install.packages("forecastHybrid")
+#library(forecastHybrid)
+#Hybrid_models <-hybridModel(ActivePower_wh_month, weights="equal")
 
-forecast(Hybrid_models)
+#forecast(Hybrid_models)
+#mixture
 
-?mixture
-
-#### Z. Applying the best model to the whole dataset ####
+#### Z. Applying the best model to the whole dataset // active energy ####
 autoplot(ActivePower_wh_month)
 ActivePower_wh_ts_month
 ARIMA_ActivePower_wh_month<-arima(ActivePower_wh_ts_month, order = c(0,0,0), seasonal=list(order=c(1,1,0)))
-forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=13)
-Final_forecast_ARIMA_ActivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=13)
+forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
+Final_forecast_ARIMA_ActivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
 autoplot(Final_forecast_ARIMA_ActivePower_wh_month)
 
 
@@ -1563,7 +1552,8 @@ ReactivePower_wh_month_training <- training_month_ts[,5]
 ReactivePower_wh_month_testing <- test_month_ts[,5]
 
 #### AB.1 HW - modeling // reactive energy - testing and training ####
-HoltWinters(ReactivePower_wh_month_training)
+?HoltWinters
+HoltWinters(ReactivePower_wh_month_training, seasonal = c("multiplicative"))
 ### C:  alpha: 0, beta : 0, gamma:0.8355229
 plot(HoltWinters(ReactivePower_wh_month_training))
 ### C: as expected, it doesnt show the initial and last observations // predicts badly from march/april 2009
@@ -1630,4 +1620,71 @@ plot(relative_errors_forecast_LM_reactive_2010)
 mean(abs(relative_errors_forecast_LM_reactive_2010))
 ### C: MRE - 0.1416168
 
+
+
+#### AD.1 ARIMA - modelling // reactive energy - testing and training  #### 
+ReactivePower_wh_month_training
+auto.arima(ReactivePower_wh_month_training)
+train_ARIMA_ReactivePower_wh_month<-arima(ReactivePower_wh_month_training, order = c(1,0,0), seasonal=list(order=c(0,1,3)))
+#### AD.2 ARIMA - forecasting // reactive energy - testing and training  #### 
+forecast:::forecast.Arima(train_ARIMA_ReactivePower_wh_month, h=10)
+Forecast_train_ARIMA_ReactivePower_wh_month <- forecast:::forecast.Arima(train_ARIMA_ReactivePower_wh_month, h=10)
+autoplot(Forecast_train_ARIMA_ReactivePower_wh_month)
+Forecast_train_ARIMA_ReactivePower_wh_month$residuals
+hist(Forecast_train_ARIMA_ReactivePower_wh_month$residuals)
+### C: not so normally distributed - weird pick
+
+## absolute error
+ReactivePower_wh_month_testing
+train_forecast_ARIMA_2010_reactive <- data.frame(Forecast_train_ARIMA_ReactivePower_wh_month)[,1]
+
+abs_errors_forecast_ARIMA_reactive_2010 <- train_forecast_ARIMA_2010_reactive - ReactivePower_wh_month_testing
+plot(abs_errors_forecast_ARIMA_reactive_2010)
+### C_: same pick - june 2010
+mean(abs(abs_errors_forecast_ARIMA_reactive_2010))
+### C: MAE - 12117.61
+
+## relative error
+relative_errors_forecast_ARIMA_reactive_2010 <- abs_errors_forecast_ARIMA_reactive_2010 / ReactivePower_wh_month_testing
+plot(relative_errors_forecast_ARIMA_reactive_2010)
+### C_: same pick - june 2010
+mean(abs(relative_errors_forecast_ARIMA_reactive_2010))
+### C: MRE - 0.1337376
+
+autoplot(ReactivePower_wh_ts_month)
+### C: consumption doesnt grow that much on that month, compared to homologous period 
+#### AE. Comparing models // reactive energy - testing and training #### 
+
+#HW
+autoplot(Forecast_train_HW_ReactivePower_wh_month)
+### C: MAE - 14,071.47 / MRE -  0.1631529
+autoplot (Forecast_train_HW_ReactivePower_wh_month, PI =FALSE) + autolayer(ReactivePower_wh_month_testing, series="Dataset")
+
+#LM 
+autoplot(Forecast_train_LM_ReactivePower_wh_month)
+### C: MAE - 12268.17 / MRE - 0.1416168
+autoplot (Forecast_train_LM_ReactivePower_wh_month, PI =FALSE) + autolayer(ReactivePower_wh_month_testing, series="Dataset")
+
+#ARIMA
+autoplot(Forecast_train_ARIMA_ReactivePower_wh_month)
+### C: MAE - 12117.61 / MRE - 0.1337376
+autoplot (Forecast_train_ARIMA_ReactivePower_wh_month, PI =FALSE) + autolayer(ReactivePower_wh_month_testing, series="Dataset")
+
+# ALL 
+autoplot(ReactivePower_wh_ts_month, series="Real data", main = "Forecast of Reactive energy by different models", xlab = "Time", ylab="Consumption of Reactive enrgy in wh") + autolayer(Forecast_train_LM_ReactivePower_wh_month, series="LM", PI= FALSE) + autolayer(Forecast_train_ARIMA_ReactivePower_wh_month, PI =FALSE, series = "ARIMA") + autolayer(Forecast_train_HW_ReactivePower_wh_month, PI =FALSE, series = "HW")
+
+accuracy(Forecast_train_HW_ReactivePower_wh_month,ReactivePower_wh_month_testing, test = NULL)
+accuracy(Forecast_train_LM_ReactivePower_wh_month,ReactivePower_wh_month_testing, test = NULL)
+accuracy(Forecast_train_ARIMA_ReactivePower_wh_month,ReactivePower_wh_month_testing, test = NULL)
+### C: BEST MODEL IS ARIMA
+#### AF. Applying the best model to the whole dataste // reactive energy ####
+autoplot(ReactivePower_wh_ts_month)
+ReactivePower_wh_ts_month
+ARIMA_ReactivePower_wh_month<-arima(ReactivePower_wh_ts_month, order = c(1,0,0), seasonal=list(order=c(0,1,3)))
+forecast:::forecast.Arima(ARIMA_ReactivePower_wh_month, h=14)
+Final_forecast_ARIMA_ReactivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ReactivePower_wh_month, h=14)
+autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)
+
+
+###################### The end #####################
 
