@@ -1598,3 +1598,36 @@ plot(relative_errors_forecast_HW_reactive_2010)
 mean(abs(relative_errors_forecast_HW_reactive_2010))
 ### C: MRE -  0.1631529
 
+
+#### AC.1 ts Linear Model - modelling // reactive energy - testing and training ####
+tslm(ReactivePower_wh_month_training ~ trend + season)
+train_LM_ReactivePower_wh_month <- tslm(ReactivePower_wh_month_training ~ trend + season)
+train_LM_ReactivePower_wh_month$fitted
+#### AC.2 ts Linear Model - forecasting // reactive energy - testing and training ####
+## predict 2010
+forecast(train_LM_ReactivePower_wh_month, h=10)
+Forecast_train_LM_ReactivePower_wh_month <- forecast(train_LM_ReactivePower_wh_month, h=10)
+autoplot(Forecast_train_LM_ReactivePower_wh_month)
+hist(Forecast_train_LM_ReactivePower_wh_month$residuals)
+### C: not normally distributes // skewed to the right. someting around reasiduals = 10000
+
+# absolute error
+ReactivePower_wh_month_testing
+train_forecast_LM_2010_reactive <- data.frame(Forecast_train_LM_ReactivePower_wh_month)[,1]
+
+abs_errors_forecast_LM_reactive_2010 <- train_forecast_LM_2010_reactive - ReactivePower_wh_month_testing
+abs_errors_forecast_LM_reactive_2010
+plot(abs_errors_forecast_LM_reactive_2010)
+### C: same pick as before - june 2010
+mean(abs(abs_errors_forecast_LM_reactive_2010))
+### C: MAE - 12268.17
+
+# relative error
+relative_errors_forecast_LM_reactive_2010 <- abs_errors_forecast_LM_reactive_2010 / ReactivePower_wh_month_testing
+relative_errors_forecast_LM_reactive_2010
+plot(relative_errors_forecast_LM_reactive_2010)
+### C: same pick as before - june 2010
+mean(abs(relative_errors_forecast_LM_reactive_2010))
+### C: MRE - 0.1416168
+
+
