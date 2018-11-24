@@ -1422,7 +1422,6 @@ mean(abs(abs_errors_forecast_HW_active_2010))
 # relative error
 relative_errors_forecast_HW_active_2010 <- abs_errors_forecast_HW_active_2010/ActivePower_wh_month_testing
 plot(relative_errors_forecast_HW_active_2010)
-mean(relative_errors_forecast_HW_active_2010)
 mean(abs(relative_errors_forecast_HW_active_2010))
 ### C: MRE - 0.08284149
 
@@ -1534,7 +1533,6 @@ accuracy(Forecast_train_ARIMA_ActivePower_wh_month,ActivePower_wh_month_testing,
 ### C: mean error (ME), root mean squared error (RMSE), mean absolute error (MAE), mean percentage error (MPE), mean absolute percentage error (MAPE), mean absolute scaled error (MASE) and the first-order autocorrelation coefficient (ACF1)
 ### C: BEST MODEL IS ARIMA
 
-
 #### Y. Combining models ####
 install.packages("opera")
 library(opera)
@@ -1547,7 +1545,56 @@ forecast(Hybrid_models)
 
 ?mixture
 
-###################### TO DOs #####################
+#### Z. Applying the best model to the whole dataset ####
+autoplot(ActivePower_wh_month)
+ActivePower_wh_ts_month
+ARIMA_ActivePower_wh_month<-arima(ActivePower_wh_ts_month, order = c(0,0,0), seasonal=list(order=c(1,1,0)))
+forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=13)
+Final_forecast_ARIMA_ActivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=13)
+autoplot(Final_forecast_ARIMA_ActivePower_wh_month)
 
-#### RESOURCE ####
-#https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
+
+###################### ATTEMPT 5 - GLOBAL REACTIVE ENERGY // TRAINING AND TESTING SETS #####################
+#### AA. Setting testing and training datasets ####
+training_month_ts 
+test_month_ts
+
+ReactivePower_wh_month_training <- training_month_ts[,5]
+ReactivePower_wh_month_testing <- test_month_ts[,5]
+
+#### AB.1 HW - modeling // reactive energy - testing and training ####
+HoltWinters(ReactivePower_wh_month_training)
+### C:  alpha: 0, beta : 0, gamma:0.8355229
+plot(HoltWinters(ReactivePower_wh_month_training))
+### C: as expected, it doesnt show the initial and last observations // predicts badly from march/april 2009
+
+train_HW_ReactivePower_wh_month <- HoltWinters(ReactivePower_wh_month_training)
+train_HW_ReactivePower_wh_month$fitted
+
+#### AB.2 HW - forecasting // reactive energy - testing and training ####
+
+## predict 2010
+forecast:::forecast.HoltWinters(train_HW_ReactivePower_wh_month, h=10)
+Forecast_train_HW_ReactivePower_wh_month <- forecast:::forecast.HoltWinters(train_HW_ReactivePower_wh_month, h=10)
+autoplot(Forecast_train_HW_ReactivePower_wh_month)
+Forecast_train_HW_ReactivePower_wh_month$fitted
+hist(Forecast_train_HW_ReactivePower_wh_month$residuals)
+### C: normally distributted
+
+# absolute arror
+Forecast_train_HW_ReactivePower_wh_month
+train_forecast_HW_2010_reactive <- data.frame(Forecast_train_HW_ReactivePower_wh_month)[,1]
+abs_errors_forecast_HW_reactive_2010 <- train_forecast_HW_2010_reactive  - ReactivePower_wh_month_testing
+abs_errors_forecast_HW_reactive_2010
+plot(abs_errors_forecast_HW_reactive_2010)
+### C: there are is onw pick ~ june 
+mean(abs(abs_errors_forecast_HW_reactive_2010))
+### C: MAE - 14,071.47
+
+# relative arror
+relative_errors_forecast_HW_reactive_2010 <- abs_errors_forecast_HW_reactive_2010 / ReactivePower_wh_month_testing
+relative_errors_forecast_HW_reactive_2010
+plot(relative_errors_forecast_HW_reactive_2010)
+mean(abs(relative_errors_forecast_HW_reactive_2010))
+### C: MRE -  0.1631529
+
