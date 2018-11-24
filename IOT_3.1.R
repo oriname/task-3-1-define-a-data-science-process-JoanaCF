@@ -1381,6 +1381,7 @@ hist(Forecast_ARIMA_ActivePower_wh_month$residuals)
 ### C: Normally distributed
 
 
+
 ###################### ATTEMPT 4 - GLOBAL ACTIVE ENERGY // TRAINING AND TESTING SETS #####################
 #### T. testing and training datasets - active energy #### 
 training_month_ts
@@ -1436,7 +1437,7 @@ forecast(train_LM_ActivePower_wh_month, h=10)
 Forecast_train_LM_ActivePower_wh_month <- forecast(train_LM_ActivePower_wh_month, h=10)
 autoplot(Forecast_train_LM_ActivePower_wh_month)
 hist(Forecast_train_LM_ActivePower_wh_month$residuals)
-### not so linearly distributed 
+### not so normaly distributed 
 
 # absolute error
 ActivePower_wh_month_testing
@@ -1471,10 +1472,82 @@ Forecast_train_ARIMA_ActivePower_wh_month$residuals
 hist(Forecast_train_ARIMA_ActivePower_wh_month$residuals)
 ### C: not so normally distributted
 
-#### TO DOs ####
-# comparar errors e modelos : autoplot () + autolayer
-# fazer igual para reactive energy 
-# fazer um modelo que e a combinação dos outros
+## absolute error
+ActivePower_wh_month_testing
+train_forecast_ARIMA_2010 <- data.frame(Forecast_train_ARIMA_ActivePower_wh_month)[,1]
+
+abs_errors_forecast_ARIMA_active_2010 <- train_forecast_ARIMA_2010 - ActivePower_wh_month_testing
+abs_errors_forecast_ARIMA_active_2010
+autoplot(abs_errors_forecast_ARIMA_active_2010)
+mean(abs(abs_errors_forecast_ARIMA_active_2010))
+### C: MAE - 52706.92
+
+## relative error
+relative_errors_forecast_ARIMA_active_2010 <- abs_errors_forecast_ARIMA_active_2010/ActivePower_wh_month_testing
+autoplot(relative_errors_forecast_ARIMA_active_2010)
+mean(abs(relative_errors_forecast_ARIMA_active_2010))
+### C: MRE - 0.07015942
+
+#### X. Comparing models ####
+
+#### X.1 ActivePower_wh_month ####
+## HW
+autoplot(Forecast_HW_ActivePower_wh_month)
+## LM
+autoplot(Forecast_LM_ActivePower_wh_month)
+## ARIMA
+autoplot(Forecast_ARIMA_ActivePower_wh_month)
+
+#### X.2 ActivePower_wh_month - TRAIN AND TEST ####
+## HW
+autoplot(Forecast_train_HW_ActivePower_wh_month)
+### C: MAE - 61,686.98 § MRE - 0.083
+plot(relative_errors_forecast_HW_active_2010)
+### C: worse predictions: june 2010
+autoplot (Forecast_train_HW_ActivePower_wh_month) + autolayer(ActivePower_wh_month_testing, series="Dataset")
+
+## LM
+autoplot(Forecast_train_LM_ActivePower_wh_month)
+### C: MAE - 57,345.84 $ MRE -  0.077
+hist(Forecast_train_LM_ActivePower_wh_month$residuals)
+### C: normally distributted
+plot(relative_errors_forecast_LM_active_2010)
+### C: worse predictions: fev 2010
+autoplot (Forecast_train_LM_ActivePower_wh_month, PI= FALSE) + autolayer(ActivePower_wh_month_testing, series="Dataset")
+autoplot (Forecast_train_LM_ActivePower_wh_month, PI= TRUE) + autolayer(ActivePower_wh_month_testing, series="Dataset")
+
+## ARIMA
+autoplot(Forecast_train_LM_ActivePower_wh_month)
+### C: MAE - 52,706.92 § MRE - 0.070
+hist(Forecast_train_ARIMA_ActivePower_wh_month$residuals)
+### C: not so normally distributted
+plot(relative_errors_forecast_ARIMA_active_2010)
+### C: worse predictions: june 2010 / very different from the other relative errors' distribution
+autoplot (Forecast_train_ARIMA_ActivePower_wh_month, PI =FALSE) + autolayer(ActivePower_wh_month_testing, series="Dataset")
+autoplot (Forecast_train_ARIMA_ActivePower_wh_month, PI =TRUE) + autolayer(ActivePower_wh_month_testing, series="Dataset")
+
+autoplot (ActivePower_wh_month, series="Real data") + autolayer(Forecast_train_LM_ActivePower_wh_month, series="LM", PI= FALSE) + autolayer(Forecast_train_ARIMA_ActivePower_wh_month, PI =FALSE, series = "ARIMA") + autolayer(Forecast_train_HW_ActivePower_wh_month, PI =FALSE, series = "HW")
+
+accuracy(Forecast_train_HW_ActivePower_wh_month,ActivePower_wh_month_testing, test = NULL)
+accuracy(Forecast_train_LM_ActivePower_wh_month,ActivePower_wh_month_testing, test = NULL)
+accuracy(Forecast_train_ARIMA_ActivePower_wh_month,ActivePower_wh_month_testing, test = NULL)
+### C: mean error (ME), root mean squared error (RMSE), mean absolute error (MAE), mean percentage error (MPE), mean absolute percentage error (MAPE), mean absolute scaled error (MASE) and the first-order autocorrelation coefficient (ACF1)
+### C: BEST MODEL IS ARIMA
+
+
+#### Y. Combining models ####
+install.packages("opera")
+library(opera)
+
+install.packages("forecastHybrid")
+library(forecastHybrid)
+Hybrid_models <-hybridModel(ActivePower_wh_month, weights="equal")
+
+forecast(Hybrid_models)
+
+?mixture
+
+###################### TO DOs #####################
 
 #### RESOURCE ####
 #https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
