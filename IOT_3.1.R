@@ -1686,5 +1686,26 @@ Final_forecast_ARIMA_ReactivePower_wh_month <-forecast:::forecast.Arima(ARIMA_Re
 autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)
 
 
-###################### The end #####################
+###################### SHINY #####################
+#### BA. setting up - ui and server  
+library(shinydashboard)
+library(shiny)
 
+ui <- dashboardPage(
+  dashboardHeader(title = "Energy Consumption  Example Dashboard"),
+  dashboardSidebar(sidebarMenu(
+    menuItem("Forecasts", tabName = "Forecast", icon = icon("dashboard")),
+    menuItem("Past", tabName = "Past", icon = icon("th")),
+    menuItem("Real time", tabName = "Real time", icon = icon("sliders")))),
+  dashboardBody()
+)
+
+server <- function(input, output) { }
+
+shinyApp(ui, server)
+
+
+
+
+## resources
+# https://rstudio.github.io/shinydashboard/get_started.html
