@@ -1683,29 +1683,99 @@ ReactivePower_wh_ts_month
 ARIMA_ReactivePower_wh_month<-arima(ReactivePower_wh_ts_month, order = c(1,0,0), seasonal=list(order=c(0,1,3)))
 forecast:::forecast.Arima(ARIMA_ReactivePower_wh_month, h=14)
 Final_forecast_ARIMA_ReactivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ReactivePower_wh_month, h=14)
-autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)
+autoplot_reactive<-autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)
+autoplot_reactive
+
 
 
 ###################### SHINY #####################
-#### BA. setting up - ui and server  
+#### BA. setting up - ui and server #### 
 library(shinydashboard)
 library(shiny)
 
+
 ui <- dashboardPage(
-  dashboardHeader(title = "Energy Consumption  Example Dashboard"),
-  dashboardSidebar(sidebarMenu(
-    menuItem("Forecasts", tabName = "Forecast", icon = icon("dashboard")),
-    menuItem("Past", tabName = "Past", icon = icon("th")),
-    menuItem("Real time", tabName = "Real time", icon = icon("sliders")))),
-  dashboardBody()
+  dashboardHeader(
+    title = "Energy Consumption - Dashboard Example", titleWidth = 450, 
+                  dropdownMenu(type = "messages",
+                        messageItem(
+                        from = "Customer support",
+                        message = "Customer support is steady this month"
+                        ),
+                        messageItem(
+                        from = "New User",
+                        message = "How do I register?",
+                        icon = icon("question"))),
+                  dropdownMenu(type = "notifications",
+                                     notificationItem(
+                                       text = "Reaching the energy limit of the month",
+                                       icon("users")
+                                       ))),
+  dashboardSidebar(
+    sidebarMenu(
+    menuItem("Forecast", tabName = "forecast", icon = icon("dashboard")),
+    menuItem("Breakdown", tabName = "breakdown", icon = icon("th"), badgeLabel = "new", 
+             badgeColor = "green"))),
+  dashboardBody(
+    tabItems(
+      # First tab content
+      tabItem(tabName = "forecast",
+              h2("Forecast of energy consumption and costs"),
+              fluidRow(
+                box(plotOutput("autoplot_reactive")))),
+      tabItem(tabName = "breakdown", 
+              h2("Breakdown of energy costs"))))
 )
 
-server <- function(input, output) { }
+server <- function(input, output) {
+  #  output$messageMenu <- renderMenu({})
+  #  output$notificationMenu <- renderMenu({})
+    output$autoplot_reactive <- renderPlot({autoplot_reactive})
+}
+
+shinyApp(ui,server)
+
+
+
+
+
+
+
+
+
+
+### frist trial
+
+#ui <- dashboardPage(
+  dashboardHeader(title = "Energy Consumption - Example Dashboard", titleWidth = 450),
+  dashboardSidebar(
+    sidebarMenu(
+    menuItem("Forecast", tabName = "Forecast", icon = icon("dashboard")),
+    menuItem("Analysis", tabName = "Analysis", icon = icon("th"))
+  )),
+  dashboardBody( 
+      tabItems(
+        tabItem(tabName = "Forecast",
+              fluidRow(
+                box(title = "Evolution of energy consumption")),
+        tabItem(tabName = "Analysis",
+                fluidRow(
+                  column(width=16,
+                  valueBox(10 * 2, "Total energy consumed (wh)"),
+                  valueBox(16, "Active energy consumed (wh)"),
+                  valueBox(4,"Reactive energy consumed (wh)"),
+                 box(title = "Cost comparison"))
+                 ))
+                )
+        )
+      )
+  )
+
+#server <- function(input, output) {
+  output$autoplot_reactive <- renderPlot({autoplot(forecast:::forecast.Arima(ARIMA_ReactivePower_wh_month, h=14))})
+}
 
 shinyApp(ui, server)
-
-
-
 
 ## resources
 # https://rstudio.github.io/shinydashboard/get_started.html
