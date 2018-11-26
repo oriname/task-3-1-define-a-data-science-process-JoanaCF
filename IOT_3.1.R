@@ -1698,8 +1698,7 @@ ui <- dashboardPage(
                   dropdownMenu(type = "messages",
                         messageItem(
                         from = "Customer support",
-                        message = "Customer support is steady this month"
-                        ),
+                        message = "Customer support is steady this month"),
                         messageItem(
                         from = "New User",
                         message = "How do I register?",
@@ -1714,14 +1713,6 @@ ui <- dashboardPage(
     menuItem("Forecast", tabName = "forecast", icon = icon("dashboard")),
     menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
     menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"),
-    selectInput("Time period", 
-                label = "Time period",
-                choices = list("Year",
-                               "Season of the year",
-                               "Month",
-                               "Day of the week", 
-                               "Hour"),
-                selected = "Month"),
     dateRangeInput("dates", label = "Date range"),
     checkboxGroupInput("checkGroup", 
                        label = "Type of energy", 
@@ -1740,37 +1731,56 @@ ui <- dashboardPage(
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
               fluidRow(
-                  infoBox(20, "Total energy consumed (wh)", color="purple"),
-                  infoBox(16, "Active energy consumed (wh)", color="yellow"),
-                  infoBox(4, "Reactive energy consumed (wh)", color="red"),
+                  valueBox(20, "Total energy consumed (wh)", color="purple"),
+                  valueBox(16, "Active energy consumed (wh)", color="yellow"),
+                  valueBox(4, "Reactive energy consumed (wh)", color="red"),
                   box(plotOutput("piechart_energy")),
-                  box(plotOutput("barchart_energy_comparison")))),
-      # third tab content - I cant see it 
+                  box(plotOutput("barchart_energy_comparison"),
+                  numericInput("num", label ="Number of previous months to compare with",value =  3,
+                                   min=1, max=12, step=NA)))),
+      # third tab content 
       tabItem(tabName = "analysis", 
               h2("Analysis of energy consumption by period"),
-              fluidRow(
-                box(plotOutput("barchart_energy_period")),
-                    box(plotOutput("piechart_energy_period")))))
-              )
+              tabBox(
+                title = "Evolution of energy consumption (2006 - 2010)",
+                # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
+                id = "tabset1", height = "300px", width = "400px",
+                tabPanel("Year", "Consumption by year "),
+                tabPanel("Month", "Consumption by month"),
+                tabPanel("Season", "Consumption by season of the year"),
+                tabPanel("Day of the week", "Consumption by day of the week"),
+                tabPanel("Day of the week", "Consumption by hour of the day")),
+              tabBox(
+                title = "Breakdown of energy consumption (2006 - 2010)",
+                # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
+                id = "tabset2", height = "300px", width = "400px",
+                tabPanel("Year", "Consumption by year "),
+                tabPanel("Month", "Consumption by month"),
+                tabPanel("Season", "Consumption by season of the year"),
+                tabPanel("Day of the week", "Consumption by day of the week"),
+                tabPanel("Day of the week", "Consumption by hour of the day"))
+              )))
 )
 
 server <- function(input, output) {
-  #  output$messageMenu <- renderMenu({})
-  #  output$notificationMenu <- renderMenu({})
     output$autoplot_reactive <- renderPlot({autoplot_reactive})
     output$piechart_energy <- renderPlot({autoplot_reactive})
     output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
     output$barchart_energy_period <- renderPlot({autoplot_reactive})
     output$piechart_energy_period <- renderPlot({autoplot_reactive})
+  ## to be developed
+  # output$messageMenu <- renderMenu({})
+  # output$notificationMenu <- renderMenu({})
+  # output$tabset1 <- renderTable({XXX})
+  # output$tabset2 <- renderTable({XXX})
 }
 
 shinyApp(ui,server)
 
 
 
-?validStatuses
-
-
 
 ## resources
 # https://rstudio.github.io/shinydashboard/get_started.html
+# https://shiny.rstudio.com/tutorial/written-tutorial/lesson3/
+
