@@ -1686,8 +1686,6 @@ Final_forecast_ARIMA_ReactivePower_wh_month <-forecast:::forecast.Arima(ARIMA_Re
 autoplot_reactive<-autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)
 autoplot_reactive
 
-
-
 ###################### SHINY #####################
 #### BA. setting up - ui and server #### 
 library(shinydashboard)
@@ -1714,26 +1712,41 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
     menuItem("Forecast", tabName = "forecast", icon = icon("dashboard")),
-    menuItem("Breakdown", tabName = "breakdown", icon = icon("th"), badgeLabel = "new", 
-             badgeColor = "green"))),
+    menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
+    menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"))),
   dashboardBody(
     tabItems(
       # First tab content
       tabItem(tabName = "forecast",
-              h2("Forecast of energy consumption and costs"),
+              h2("Forecast of energy consumption"),
               fluidRow(
                 box(plotOutput("autoplot_reactive")))),
+    # second tab content
       tabItem(tabName = "breakdown", 
-              h2("Breakdown of energy costs"),
+              h2("Breakdown of energy consumption"),
               fluidRow(
-                  infoBox(10 * 2, "Total energy consumed (wh)")
-              ))))
+                  infoBox(10 * 2, "Total energy consumed (wh)"),
+                  infoBox(16, "Active energy consumed (wh)"),
+                  infoBox(4, "Reactive energy consumed (wh)"),
+                  box(plotOutput("piechart_energy")),
+                  box(plotOutput("barchart_energy_comparison")))),
+      # third tab content - I cant see it 
+      tabItem(tabName = "analysis", 
+              h2("Analysis of energy consumption by period"),
+              fluidRow(
+                box(plotOutput("barchart_energy_period")),
+                    box(plotOutput("piechart_energy_period")))))
+              )
 )
 
 server <- function(input, output) {
   #  output$messageMenu <- renderMenu({})
   #  output$notificationMenu <- renderMenu({})
     output$autoplot_reactive <- renderPlot({autoplot_reactive})
+    output$piechart_energy <- renderPlot({autoplot_reactive})
+    output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
+    output$barchart_energy_period <- renderPlot({autoplot_reactive})
+    output$piechart_energy_period <- renderPlot({autoplot_reactive})
 }
 
 shinyApp(ui,server)
