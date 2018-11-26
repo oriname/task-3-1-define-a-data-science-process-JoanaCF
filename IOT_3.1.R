@@ -1724,7 +1724,10 @@ ui <- dashboardPage(
               fluidRow(
                 box(plotOutput("autoplot_reactive")))),
       tabItem(tabName = "breakdown", 
-              h2("Breakdown of energy costs"))))
+              h2("Breakdown of energy costs"),
+              fluidRow(
+                  infoBox(10 * 2, "Total energy consumed (wh)")
+              ))))
 )
 
 server <- function(input, output) {
@@ -1736,46 +1739,6 @@ server <- function(input, output) {
 shinyApp(ui,server)
 
 
-
-
-
-
-
-
-
-
-### frist trial
-
-#ui <- dashboardPage(
-  dashboardHeader(title = "Energy Consumption - Example Dashboard", titleWidth = 450),
-  dashboardSidebar(
-    sidebarMenu(
-    menuItem("Forecast", tabName = "Forecast", icon = icon("dashboard")),
-    menuItem("Analysis", tabName = "Analysis", icon = icon("th"))
-  )),
-  dashboardBody( 
-      tabItems(
-        tabItem(tabName = "Forecast",
-              fluidRow(
-                box(title = "Evolution of energy consumption")),
-        tabItem(tabName = "Analysis",
-                fluidRow(
-                  column(width=16,
-                  valueBox(10 * 2, "Total energy consumed (wh)"),
-                  valueBox(16, "Active energy consumed (wh)"),
-                  valueBox(4,"Reactive energy consumed (wh)"),
-                 box(title = "Cost comparison"))
-                 ))
-                )
-        )
-      )
-  )
-
-#server <- function(input, output) {
-  output$autoplot_reactive <- renderPlot({autoplot(forecast:::forecast.Arima(ARIMA_ReactivePower_wh_month, h=14))})
-}
-
-shinyApp(ui, server)
 
 ## resources
 # https://rstudio.github.io/shinydashboard/get_started.html
