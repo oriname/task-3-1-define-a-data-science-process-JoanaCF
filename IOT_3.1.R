@@ -1690,7 +1690,7 @@ autoplot_reactive
 #### BA. setting up - ui and server #### 
 library(shinydashboard)
 library(shiny)
-
+library(shinythemes)
 
 ui <- dashboardPage(
   dashboardHeader(
@@ -1713,21 +1713,36 @@ ui <- dashboardPage(
     sidebarMenu(
     menuItem("Forecast", tabName = "forecast", icon = icon("dashboard")),
     menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
-    menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"))),
+    menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"),
+    selectInput("Time period", 
+                label = "Time period",
+                choices = list("Year",
+                               "Season of the year",
+                               "Month",
+                               "Day of the week", 
+                               "Hour"),
+                selected = "Month"),
+    dateRangeInput("dates", label = "Date range"),
+    checkboxGroupInput("checkGroup", 
+                       label = "Type of energy", 
+                       choices = list("Active" = 1, 
+                                      "Reactive" = 2),
+                       selected = 1))),
   dashboardBody(
     tabItems(
       # First tab content
       tabItem(tabName = "forecast",
               h2("Forecast of energy consumption"),
               fluidRow(
-                box(plotOutput("autoplot_reactive")))),
+                column(width = 12,
+                box(plotOutput("autoplot_reactive"))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
               fluidRow(
-                  infoBox(10 * 2, "Total energy consumed (wh)"),
-                  infoBox(16, "Active energy consumed (wh)"),
-                  infoBox(4, "Reactive energy consumed (wh)"),
+                  infoBox(20, "Total energy consumed (wh)", color="purple"),
+                  infoBox(16, "Active energy consumed (wh)", color="yellow"),
+                  infoBox(4, "Reactive energy consumed (wh)", color="red"),
                   box(plotOutput("piechart_energy")),
                   box(plotOutput("barchart_energy_comparison")))),
       # third tab content - I cant see it 
@@ -1750,6 +1765,10 @@ server <- function(input, output) {
 }
 
 shinyApp(ui,server)
+
+
+
+?validStatuses
 
 
 
