@@ -1737,8 +1737,17 @@ ui <- dashboardPage(
                                                  label = "Type of energy", 
                                                  choices = list("Active energy (wh)" = "Active", 
                                                                 "Reactive energy (wh)" = "Reactive"), 
-                                                 selected = 1)),
+                                                 selected = "Active")),
     menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
+    conditionalPanel("input.sidebarmenu == 'breakdown'",
+                     selectInput("select_year",
+                                 label = "Year", 
+                                 choices = list("2006" = "2006","2007" = "2007","2008" = "2008","2009" = "2009","2010" = "2010"),
+                                 selected = "2006"),
+                     selectInput("select_month",
+                                 label = "Month", 
+                                 choices = list("Jan" = "1", "Fev" = "2","Mar" = "3", "Apr" = "4","May" = "5","Jun" = "6","Jul" = "7","Ago" = "8","Sep" = "9","Oct" = "10","Nov" = "11","Dec" = "12"),
+                                 selected = "1")),
     menuItem("Analysis", tabName = "analysis", icon = icon("bar-chart-o")),
              conditionalPanel("input.sidebarmenu == 'analysis'",
                               selectInput("select_type_energy",
@@ -1748,7 +1757,7 @@ ui <- dashboardPage(
                                                          "Sub-meter 1 (wh)" = "Sub_metering_1",
                                                          "Sub-meter 2 (wh)" = "Sub_metering_2",
                                                          "Sub-meter 3 (wh)" = "Sub_metering_3"),                                                         
-                                          selected = "Sub_metering_1")))
+                                                          selected = "Sub_metering_1")))
     ),
   dashboardBody(
     tabItems(
@@ -1757,7 +1766,8 @@ ui <- dashboardPage(
               h2("Forecast of energy consumption over 12 months"),
               fluidRow(
                 column(width = 12,
-                box(status = "primary", height = 300, width = 600, plotOutput("autoplot_reactive", height = 250, width = 650))))),
+                box(status = "primary", height = 300, width = 600, 
+                    plotOutput("autoplot_reactive", height = 250, width = 650))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
@@ -1765,39 +1775,20 @@ ui <- dashboardPage(
                   valueBox("20 wh", "Total energy consumed", color="purple"),
                   valueBox("16 wh", "Active energy consumed", color="yellow"),
                   valueBox("4 wh", "Reactive energy consumed", color="red"),
-                  valueBox("200 euros", "Total cost of energy", color="purple"),
-                  valueBox("160 euros", "Cost of Active energy", color="yellow"),
-                  valueBox("40 euros", "Cost of Reactive energy", color="red"),
-                  box(plotOutput("piechart_energy")),
-                  box( plotOutput("barchart_energy_comparison"),
-                  numericInput("numero", label ="Number of previous months to compare with",value =  3,
-                                   min=1, max=12, step=NA)))),
+                  box(plotOutput("piechart_energy")))),
       # third tab content 
       tabItem(tabName = "analysis", 
-              h2("Analysis of energy consumption by period"),
+              h2("Analysis of energy consumption by period (dec 2006 - nov 2010"),
               fluidRow(
               tabBox(
-                title = "Evolution of energy consumption (2006 - 2010)",
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
                 id = "tabset1", 
                 height = "300px", width = "400px",
                 tabPanel("Year", "Consumption by month", plotOutput("Consumption_year")),
-                tabPanel("Month", "Consumption by month",plotOutput("Consumption_month")),
                 tabPanel("Season", "Consumption by season of the year", plotOutput("Consumption_season")),
-                tabPanel("Day of the week", "Consumption by day of the week", plotOutput("Consumption_dayweek")),
-                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour"))),
-              tabBox(
-                title = "Breakdown of energy consumption (2006 - 2010)",
-                # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
-                id = "tabset2", 
-                height = "300px", width = "400px",
-                tabPanel("Year", "Consumption by year "),
-                tabPanel("Month", "Consumption by month"),
-                tabPanel("Season", "Consumption by season of the year"),
-                tabPanel("Day of the week", "Consumption by day of the week"),
-                tabPanel("Hour", "Consumption by hour of the day"))
-              ))
-    )))
+                tabPanel("Month", "Consumption by month",plotOutput("Consumption_month")),
+                tabPanel("Day", "Consumption by day of the week", plotOutput("Consumption_dayweek")),
+                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour"))))))))
 
 server <- function(input, output) {
   
@@ -1807,6 +1798,7 @@ server <- function(input, output) {
   dt_season <- reactive({PowerConsumption_Season_year %>% select(Season_of_year,input$select_type_energy)})
   dt_dayweek <- reactive({PowerConsumption_Day_of_week %>% select(Day_of_week,input$select_type_energy)})
   dt_hour <- reactive({PowerConsumption_Hour %>% select(Hour,input$select_type_energy)})
+  dt_month_pie <- reactive({PowerConsumption_Month %>% select(input$select_month,input$select_year, Global_active_power_wh, Global_reactive_power_wh)})
   
   ## outputs
   output$autoplot_reactive <- renderPlot({
@@ -1824,7 +1816,7 @@ server <- function(input, output) {
   
   output$Consumption_year <- renderPlot({ 
     plot_year <- dt_year()
-    plot(plot_year, width=500, heigth=200)
+    plot(plot_year)
     })
 
   output$Consumption_month <- renderPlot({ 
@@ -1847,7 +1839,10 @@ server <- function(input, output) {
     plot(plot_hour)
   })
   
-    output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
+    output$piechart_energy <- renderPlot({
+      plot_piechart <- dt_month_pie()
+      plot(plot_piechart)
+  })
 
   ## to be developed
   # output$messageMenu <- renderMenu({})
