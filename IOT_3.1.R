@@ -314,11 +314,11 @@ summary(PowerConsumption_byday)
 
 #### 9.B Create a subsample of the dataset - By hour ####
 PowerConsumption_Hour <- PowerConsumption_c %>%
-  group_by(Hour, Date) %>%
+  group_by(Hour) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
 summary(PowerConsumption_Hour)
 
-#qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Global_power_wh)
+qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Global_power_wh)
 #qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Sub_metering_1, col="orange")
 #qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Sub_metering_2, col="orange")
 #qplot(PowerConsumption_Hour$Hour, PowerConsumption_Hour$Sub_metering_3, col="orange")
@@ -1242,10 +1242,6 @@ autoplot(MRE_traintest_arima010)
 ### C: ignore MRE of arima
 
 
-
-
-
-
 ###################### ATTEMPT 3 - GLOBAL ACTIVE ENERGY  // ALL DATASET ################# ####
 #### M. Check distribution #### 
 summary(Consumption_Month_)
@@ -1674,7 +1670,10 @@ autoplot(Forecast_train_ARIMA_ReactivePower_wh_month)
 autoplot (Forecast_train_ARIMA_ReactivePower_wh_month, PI =FALSE) + autolayer(ReactivePower_wh_month_testing, series="Dataset")
 
 # ALL 
-autoplot(ReactivePower_wh_ts_month, series="Real data", main = "Forecast of Reactive energy by different models", xlab = "Time", ylab="Consumption of Reactive enrgy in wh") + autolayer(Forecast_train_LM_ReactivePower_wh_month, series="LM", PI= FALSE) + autolayer(Forecast_train_ARIMA_ReactivePower_wh_month, PI =FALSE, series = "ARIMA") + autolayer(Forecast_train_HW_ReactivePower_wh_month, PI =FALSE, series = "HW")
+autoplot(ReactivePower_wh_ts_month, series="Real data", main = "Forecast of Reactive energy by different models", xlab = "Time", ylab="Consumption of Reactive enrgy in wh") + 
+  autolayer(Forecast_train_LM_ReactivePower_wh_month, series="LM", PI= FALSE) + 
+  autolayer(Forecast_train_ARIMA_ReactivePower_wh_month, PI =FALSE, series = "ARIMA") + 
+  autolayer(Forecast_train_HW_ReactivePower_wh_month, PI =FALSE, series = "HW")
 
 accuracy(Forecast_train_HW_ReactivePower_wh_month,ReactivePower_wh_month_testing, test = NULL)
 accuracy(Forecast_train_LM_ReactivePower_wh_month,ReactivePower_wh_month_testing, test = NULL)
@@ -1692,17 +1691,28 @@ autoplot_reactive
 
 
 ###################### SHINY #####################
-#### BA. setting up - ui and server #### 
+#### BA. Setting up - ui and server #### 
 library(shinydashboard)
 library(shiny)
 library(shinythemes)
 
+#### BC. Pre-processing ####
+# grouped by year
 PowerConsumption_Year
 str(PowerConsumption_Year)
 PowerConsumption_Year$Year <- as.numeric(PowerConsumption_Year$Year)
 
+# grouped by month
+str(PowerConsumption_Month)
+View(PowerConsumption_Month)
+
+PowerConsumption_Month_2 <- PowerConsumption_Month %>%
+  group_by(Month) %>%
+  summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power_wh), Global_active_power_wh=sum(Global_active_power_wh), Global_Sub_meter=sum(Global_Sub_meter), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
+summary(PowerConsumption_Month_2)
 
 
+#### BD. Shiny #### 
 ui <- dashboardPage(
   dashboardHeader(
     title = "Energy Consumption - Dashboard Example", titleWidth = 450, 
@@ -1723,8 +1733,6 @@ ui <- dashboardPage(
     sidebarMenu(id = "sidebarmenu",
     menuItem("Forecast", tabName = "forecast", icon = icon("dashboard"),badgeLabel = "new", badgeColor = "yellow"),
              conditionalPanel("input.sidebarmenu == 'forecast'",
-                              dateRangeInput("dates", label= "Date range", start = as_date("2007-01-01"), end = as_date("2011-12-31"), weekstart = 1,
-                                             separator = " to "),
                               selectInput("list_energy_type", 
                                                  label = "Type of energy", 
                                                  choices = list("Active energy (wh)" = "Active", 
@@ -1749,7 +1757,7 @@ ui <- dashboardPage(
               h2("Forecast of energy consumption over 12 months"),
               fluidRow(
                 column(width = 12,
-                box(title = "Evolution of energy consumption", status = "primary", solidHeader=TRUE, height = 400, width = 500, plotOutput("autoplot_reactive", height = 300, width = 600))))),
+                box(status = "primary", height = 300, width = 600, plotOutput("autoplot_reactive", height = 250, width = 650))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
@@ -1767,43 +1775,80 @@ ui <- dashboardPage(
       # third tab content 
       tabItem(tabName = "analysis", 
               h2("Analysis of energy consumption by period"),
+              fluidRow(
               tabBox(
                 title = "Evolution of energy consumption (2006 - 2010)",
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
-                id = "tabset1", height = "300px", width = "400px",
-                tabPanel("Year", "Consumption by year ", plotOutput("Consumption_year")),
+                id = "tabset1", 
+                height = "300px", width = "400px",
+                tabPanel("Year", "Consumption by month", plotOutput("Consumption_year")),
                 tabPanel("Month", "Consumption by month",plotOutput("Consumption_month")),
-                tabPanel("Season", "Consumption by season of the year", plotOutput("Consumption_Season")),
+                tabPanel("Season", "Consumption by season of the year", plotOutput("Consumption_season")),
                 tabPanel("Day of the week", "Consumption by day of the week", plotOutput("Consumption_dayweek")),
-                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour", height= "200px")),
+                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour"))),
               tabBox(
                 title = "Breakdown of energy consumption (2006 - 2010)",
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
-                id = "tabset2", height = "300px", width = "400px",
+                id = "tabset2", 
+                height = "300px", width = "400px",
                 tabPanel("Year", "Consumption by year "),
                 tabPanel("Month", "Consumption by month"),
                 tabPanel("Season", "Consumption by season of the year"),
                 tabPanel("Day of the week", "Consumption by day of the week"),
                 tabPanel("Hour", "Consumption by hour of the day"))
-              )))))
+              ))
+    )))
 
 server <- function(input, output) {
   
+  ## datasets
   dt_year <- reactive({PowerConsumption_Year %>% select(Year,input$select_type_energy)})
+  dt_month <- reactive({PowerConsumption_Month_2 %>% select(Month,input$select_type_energy)})
+  dt_season <- reactive({PowerConsumption_Season_year %>% select(Season_of_year,input$select_type_energy)})
+  dt_dayweek <- reactive({PowerConsumption_Day_of_week %>% select(Day_of_week,input$select_type_energy)})
+  dt_hour <- reactive({PowerConsumption_Hour %>% select(Hour,input$select_type_energy)})
   
+  ## outputs
   output$autoplot_reactive <- renderPlot({
-  if(input$"list_energy_type"=="Active"){autoplot(Final_forecast_ARIMA_ActivePower_wh_month)}
-  else{autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)}
+  if(input$"list_energy_type"=="Active"){autoplot(Final_forecast_ARIMA_ActivePower_wh_month, 
+                                                  xlab = NULL, 
+                                                  ylab = NULL,
+                                                  PI = FALSE) +
+                                                  ggtitle("EVOLUTION OF ACTIVE ENERGY CONSUMPTION")}
+  else{autoplot(Final_forecast_ARIMA_ReactivePower_wh_month, 
+                xlab = NULL, 
+                ylab = NULL,
+                PI = FALSE)+
+                ggtitle("EVOLUTION OF REACTIVE ENERGY CONSUMPTION")}
     })
   
   output$Consumption_year <- renderPlot({ 
     plot_year <- dt_year()
-    plot(plot_year)
+    plot(plot_year, width=500, heigth=200)
     })
 
+  output$Consumption_month <- renderPlot({ 
+    plot_month <- dt_month()
+    plot(plot_month)
+  })
+
+  output$Consumption_season <- renderPlot({ 
+    plot_season <- dt_season()
+    plot(plot_season)
+  })
+  
+  output$Consumption_dayweek <- renderPlot({ 
+    plot_dayweek <- dt_dayweek()
+    plot(plot_dayweek)
+  })
+  
+  output$Consumption_hour <- renderPlot({ 
+    plot_hour <- dt_dayweek()
+    plot(plot_hour)
+  })
+  
     output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
 
-    
   ## to be developed
   # output$messageMenu <- renderMenu({})
   # output$notificationMenu <- renderMenu({})
@@ -1812,14 +1857,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui,server)
-
-
-
-## predictions - active power: Final_forecast_ARIMA_ActivePower_wh_month
-## prediction - reactive power: Final_forecast_ARIMA_ReactivePower_wh_month
-## Data set by month: Consumption_Month_ts_2
-
-## resources
-# https://rstudio.github.io/shinydashboard/get_started.html
-# https://shiny.rstudio.com/tutorial/written-tutorial/lesson3/
-
