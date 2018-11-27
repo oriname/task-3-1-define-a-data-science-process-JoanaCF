@@ -1772,9 +1772,9 @@ ui <- dashboardPage(
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
               fluidRow(
-                  valueBox("20 wh", "Total energy consumed", color="purple"),
-                  valueBox("16 wh", "Active energy consumed", color="yellow"),
-                  valueBox("4 wh", "Reactive energy consumed", color="red"),
+                  valueBoxOutput("Total_energy_consumed"),
+                  valueBoxOutput("Active_energy_consumed"),
+                  valueBoxOutput("Reactive_energy_consumed"),
                   box(plotOutput("piechart_energy")))),
       # third tab content 
       tabItem(tabName = "analysis", 
@@ -1798,7 +1798,7 @@ server <- function(input, output) {
   dt_season <- reactive({PowerConsumption_Season_year %>% select(Season_of_year,input$select_type_energy)})
   dt_dayweek <- reactive({PowerConsumption_Day_of_week %>% select(Day_of_week,input$select_type_energy)})
   dt_hour <- reactive({PowerConsumption_Hour %>% select(Hour,input$select_type_energy)})
-  dt_month_pie <- reactive({PowerConsumption_Month %>% select(input$select_month,input$select_year, Global_active_power_wh, Global_reactive_power_wh)})
+  #dt_month_pie <- reactive({PowerConsumption_Month %>% select(input$select_month,input$select_year, Global_active_power_wh, Global_reactive_power_wh)})
   
   ## outputs
   output$autoplot_reactive <- renderPlot({
@@ -1839,16 +1839,26 @@ server <- function(input, output) {
     plot(plot_hour)
   })
   
-    output$piechart_energy <- renderPlot({
-      plot_piechart <- dt_month_pie()
-      plot(plot_piechart)
-  })
+   # output$piechart_energy <- renderPlot({
+     # plot_piechart <- dt_month_pie()
+      #plot(plot_piechart)
+#  })
 
   ## to be developed
   # output$messageMenu <- renderMenu({})
   # output$notificationMenu <- renderMenu({})
   # output$tabset1 <- renderTable({XXX})
   # output$tabset2 <- renderTable({XXX})
+    
+   output$Total_energy_consumed<- renderValueBox({ 
+    valueBox("200","Total Energy consumed (wh)", color = "purple")
+      })
+    output$Active_energy_consumed<- renderValueBox({  
+    valueBox("180","Active Energy consumed (wh)", color = "yellow")
+      })
+    output$Reactive_energy_consumed<- renderValueBox({
+      valueBox("20","Reactive Energy consumed (wh)", color = "red")
+    })
 }
 
 shinyApp(ui,server)
