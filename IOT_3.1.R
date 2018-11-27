@@ -1697,6 +1697,10 @@ library(shinydashboard)
 library(shiny)
 library(shinythemes)
 
+PowerConsumption_Year
+str(PowerConsumption_Year)
+PowerConsumption_Year$Year <- as.numeric(PowerConsumption_Year$Year)
+
 
 
 ui <- dashboardPage(
@@ -1745,7 +1749,7 @@ ui <- dashboardPage(
               h2("Forecast of energy consumption over 12 months"),
               fluidRow(
                 column(width = 12,
-                box(title = "Evolution of energy consumption", status = "primary", solidHeader=TRUE, height = 400, width = 500, plotOutput("autoplot_reactive",height = 300, width = 600))))),
+                box(title = "Evolution of energy consumption", status = "primary", solidHeader=TRUE, height = 400, width = 500, plotOutput("autoplot_reactive", height = 300, width = 600))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
@@ -1771,7 +1775,7 @@ ui <- dashboardPage(
                 tabPanel("Month", "Consumption by month",plotOutput("Consumption_month")),
                 tabPanel("Season", "Consumption by season of the year", plotOutput("Consumption_Season")),
                 tabPanel("Day of the week", "Consumption by day of the week", plotOutput("Consumption_dayweek")),
-                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour"))),
+                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour", height= "200px")),
               tabBox(
                 title = "Breakdown of energy consumption (2006 - 2010)",
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
@@ -1781,11 +1785,11 @@ ui <- dashboardPage(
                 tabPanel("Season", "Consumption by season of the year"),
                 tabPanel("Day of the week", "Consumption by day of the week"),
                 tabPanel("Hour", "Consumption by hour of the day"))
-              ))))
+              )))))
 
 server <- function(input, output) {
   
-  dt_year <- reactive({PowerConsumption_Year %>% select(input$"select_type_energy", Year)})
+  dt_year <- reactive({PowerConsumption_Year %>% select(Year,input$select_type_energy)})
   
   output$autoplot_reactive <- renderPlot({
   if(input$"list_energy_type"=="Active"){autoplot(Final_forecast_ARIMA_ActivePower_wh_month)}
@@ -1793,8 +1797,8 @@ server <- function(input, output) {
     })
   
   output$Consumption_year <- renderPlot({ 
-    plot_year <- dt_year
-    hist(plot_year)
+    plot_year <- dt_year()
+    plot(plot_year)
     })
 
     output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
@@ -1808,6 +1812,7 @@ server <- function(input, output) {
 }
 
 shinyApp(ui,server)
+
 
 
 ## predictions - active power: Final_forecast_ARIMA_ActivePower_wh_month
