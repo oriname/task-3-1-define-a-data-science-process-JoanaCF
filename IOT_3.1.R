@@ -1544,7 +1544,7 @@ ARIMA_ActivePower_wh_month<-arima(ActivePower_wh_ts_month, order = c(0,0,0), sea
 forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
 Final_forecast_ARIMA_ActivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
 autoplot(Final_forecast_ARIMA_ActivePower_wh_month)
-
+Final_forecast_ARIMA_ActivePower_wh_month
 
 ###################### ATTEMPT 5 - GLOBAL REACTIVE ENERGY // TRAINING AND TESTING SETS #####################
 #### AA. Setting testing and training datasets ####
@@ -1689,11 +1689,15 @@ Final_forecast_ARIMA_ReactivePower_wh_month <-forecast:::forecast.Arima(ARIMA_Re
 autoplot_reactive<-autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)
 autoplot_reactive
 
+
+
 ###################### SHINY #####################
 #### BA. setting up - ui and server #### 
 library(shinydashboard)
 library(shiny)
 library(shinythemes)
+
+
 
 ui <- dashboardPage(
   dashboardHeader(
@@ -1715,34 +1719,46 @@ ui <- dashboardPage(
     sidebarMenu(id = "sidebarmenu",
     menuItem("Forecast", tabName = "forecast", icon = icon("dashboard"),badgeLabel = "new", badgeColor = "yellow"),
              conditionalPanel("input.sidebarmenu == 'forecast'",
-                              dateRangeInput("dates", label= "Date range", start=as.Date(2007/01/01), end=as.Date(2011/12/31)),
-                              checkboxGroupInput("checkGroup", 
+                              dateRangeInput("dates", label= "Date range", start = as_date("2007-01-01"), end = as_date("2011-12-31"), weekstart = 1,
+                                             separator = " to "),
+                              selectInput("list_energy_type", 
                                                  label = "Type of energy", 
-                                                 choices = list("Active energy (wh)" = 1, 
-                                                                "Reactive energy (wh)" = 2), 
+                                                 choices = list("Active energy (wh)" = "Active", 
+                                                                "Reactive energy (wh)" = "Reactive"), 
                                                  selected = 1)),
     menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
-    menuItem("Analysis", tabName = "analysis", icon = icon("bar-chart-o"))
-    )
+    menuItem("Analysis", tabName = "analysis", icon = icon("bar-chart-o")),
+             conditionalPanel("input.sidebarmenu == 'analysis'",
+                              selectInput("select_type_energy",
+                                          label = "Type of energy", 
+                                          choices = list("Active energy (wh)" = "Global_active_power_wh", 
+                                                         "Reactive energy (wh)" = "Global_reactive_power_wh",
+                                                         "Sub-meter 1 (wh)" = "Sub_metering_1",
+                                                         "Sub-meter 2 (wh)" = "Sub_metering_2",
+                                                         "Sub-meter 3 (wh)" = "Sub_metering_3"),                                                         
+                                          selected = "Sub_metering_1")))
     ),
   dashboardBody(
     tabItems(
       # First tab content
       tabItem(tabName = "forecast",
-              h2("Forecast of energy consumption"),
+              h2("Forecast of energy consumption over 12 months"),
               fluidRow(
                 column(width = 12,
-                box(plotOutput("autoplot_reactive"))))),
+                box(title = "Evolution of energy consumption", status = "primary", solidHeader=TRUE, height = 400, width = 500, plotOutput("autoplot_reactive",height = 300, width = 600))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
               fluidRow(
-                  valueBox(20, "Total energy consumed (wh)", color="purple"),
-                  valueBox(16, "Active energy consumed (wh)", color="yellow"),
-                  valueBox(4, "Reactive energy consumed (wh)", color="red"),
+                  valueBox("20 wh", "Total energy consumed", color="purple"),
+                  valueBox("16 wh", "Active energy consumed", color="yellow"),
+                  valueBox("4 wh", "Reactive energy consumed", color="red"),
+                  valueBox("200 euros", "Total cost of energy", color="purple"),
+                  valueBox("160 euros", "Cost of Active energy", color="yellow"),
+                  valueBox("40 euros", "Cost of Reactive energy", color="red"),
                   box(plotOutput("piechart_energy")),
-                  box(plotOutput("barchart_energy_comparison"),
-                  numericInput("num", label ="Number of previous months to compare with",value =  3,
+                  box( plotOutput("barchart_energy_comparison"),
+                  numericInput("numero", label ="Number of previous months to compare with",value =  3,
                                    min=1, max=12, step=NA)))),
       # third tab content 
       tabItem(tabName = "analysis", 
@@ -1751,11 +1767,11 @@ ui <- dashboardPage(
                 title = "Evolution of energy consumption (2006 - 2010)",
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
                 id = "tabset1", height = "300px", width = "400px",
-                tabPanel("Year", "Consumption by year "),
-                tabPanel("Month", "Consumption by month"),
-                tabPanel("Season", "Consumption by season of the year"),
-                tabPanel("Day of the week", "Consumption by day of the week"),
-                tabPanel("Day of the week", "Consumption by hour of the day")),
+                tabPanel("Year", "Consumption by year ", plotOutput("Consumption_year")),
+                tabPanel("Month", "Consumption by month",plotOutput("Consumption_month")),
+                tabPanel("Season", "Consumption by season of the year", plotOutput("Consumption_Season")),
+                tabPanel("Day of the week", "Consumption by day of the week", plotOutput("Consumption_dayweek")),
+                tabPanel("Hour", "Consumption by hour of the day", plotOutput("Consumption_hour"))),
               tabBox(
                 title = "Breakdown of energy consumption (2006 - 2010)",
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
@@ -1764,16 +1780,25 @@ ui <- dashboardPage(
                 tabPanel("Month", "Consumption by month"),
                 tabPanel("Season", "Consumption by season of the year"),
                 tabPanel("Day of the week", "Consumption by day of the week"),
-                tabPanel("Day of the week", "Consumption by hour of the day"))
-              )))
-)
+                tabPanel("Hour", "Consumption by hour of the day"))
+              ))))
 
 server <- function(input, output) {
-    output$autoplot_reactive <- renderPlot({autoplot_reactive})
-    output$piechart_energy <- renderPlot({autoplot_reactive})
+  
+  dt_year <- reactive({PowerConsumption_Year %>% select(input$"select_type_energy", Year)})
+  
+  output$autoplot_reactive <- renderPlot({
+  if(input$"list_energy_type"=="Active"){autoplot(Final_forecast_ARIMA_ActivePower_wh_month)}
+  else{autoplot(Final_forecast_ARIMA_ReactivePower_wh_month)}
+    })
+  
+  output$Consumption_year <- renderPlot({ 
+    plot_year <- dt_year
+    hist(plot_year)
+    })
+
     output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
-    output$barchart_energy_period <- renderPlot({autoplot_reactive})
-    output$piechart_energy_period <- renderPlot({autoplot_reactive})
+
     
   ## to be developed
   # output$messageMenu <- renderMenu({})
@@ -1785,7 +1810,9 @@ server <- function(input, output) {
 shinyApp(ui,server)
 
 
-
+## predictions - active power: Final_forecast_ARIMA_ActivePower_wh_month
+## prediction - reactive power: Final_forecast_ARIMA_ReactivePower_wh_month
+## Data set by month: Consumption_Month_ts_2
 
 ## resources
 # https://rstudio.github.io/shinydashboard/get_started.html
