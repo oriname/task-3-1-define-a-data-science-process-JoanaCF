@@ -1712,12 +1712,18 @@ ui <- dashboardPage(
                                        icon("users")
                                        ))),
   dashboardSidebar(
-    sidebarMenu(
-    menuItem("Forecast", tabName = "forecast", icon = icon("dashboard"),
-             menusubItem(dateRangeInput("dates", label = "Date range"))
-             ),
+    sidebarMenu(id = "sidebarmenu",
+    menuItem("Forecast", tabName = "forecast", icon = icon("dashboard"),badgeLabel = "new", badgeColor = "yellow"),
+             conditionalPanel("input.sidebarmenu == 'forecast'",
+                              dateRangeInput("dates", label= "Date range", start=as.Date(2007/01/01), end=as.Date(2011/12/31)),
+                              checkboxGroupInput("checkGroup", 
+                                                 label = "Type of energy", 
+                                                 choices = list("Active energy (wh)" = 1, 
+                                                                "Reactive energy (wh)" = 2), 
+                                                 selected = 1)),
     menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
-    menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"))
+    menuItem("Analysis", tabName = "analysis", icon = icon("bar-chart-o"))
+    )
     ),
   dashboardBody(
     tabItems(
