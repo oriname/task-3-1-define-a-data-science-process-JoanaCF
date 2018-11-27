@@ -1120,6 +1120,9 @@ library(stats)
 training_month<-subset(Consumption_Month_,Year>=2007 & Year <=2009)
 training_month_ts <- ts(data = training_month, frequency = 12, start = 2007)
 
+str(training_month)
+count(training_month_ts %>% year == 2009)
+
 plot(Consumption_Month_$Global_active_wh)
 plot(training_month$Global_active_wh)
 training_month_ts
@@ -1710,15 +1713,12 @@ ui <- dashboardPage(
                                        ))),
   dashboardSidebar(
     sidebarMenu(
-    menuItem("Forecast", tabName = "forecast", icon = icon("dashboard")),
+    menuItem("Forecast", tabName = "forecast", icon = icon("dashboard"),
+             menusubItem(dateRangeInput("dates", label = "Date range"))
+             ),
     menuItem("Breakdown", tabName = "breakdown", icon = icon("th")),
-    menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"),
-    dateRangeInput("dates", label = "Date range"),
-    checkboxGroupInput("checkGroup", 
-                       label = "Type of energy", 
-                       choices = list("Active" = 1, 
-                                      "Reactive" = 2),
-                       selected = 1))),
+    menuItem("Analysis", tabName = "analysis", icon = icon("th"), badgeLabel = "new", badgeColor = "yellow"))
+    ),
   dashboardBody(
     tabItems(
       # First tab content
@@ -1768,6 +1768,7 @@ server <- function(input, output) {
     output$barchart_energy_comparison <- renderPlot({autoplot_reactive})
     output$barchart_energy_period <- renderPlot({autoplot_reactive})
     output$piechart_energy_period <- renderPlot({autoplot_reactive})
+    
   ## to be developed
   # output$messageMenu <- renderMenu({})
   # output$notificationMenu <- renderMenu({})
