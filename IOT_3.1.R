@@ -1699,8 +1699,12 @@ autoplot_reactive
 library(shinydashboard)
 library(shiny)
 library(shinythemes)
+library(stats)
+library(highcharter) 
+
 
 #### BC. Pre-processing ####
+
 # grouped by year
 PowerConsumption_Year
 str(PowerConsumption_Year)
@@ -1715,28 +1719,17 @@ PowerConsumption_Month_2 <- PowerConsumption_Month %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power_wh), Global_active_power_wh=sum(Global_active_power_wh), Global_Sub_meter=sum(Global_Sub_meter), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
 summary(PowerConsumption_Month_2)
 
-
-#### BD. Shiny #### 
-
-
+### Power consumption year - time series 
 PowerConsumption_Year_ts <- ts(PowerConsumption_Year,frequency=1,start=2006)
 str(PowerConsumption_Year_ts)
 colnames(PowerConsumption_Year_ts)
 PowerConsumption_Year_ts[,"Global_power_wh"]
 PowerConsumption_Month
 
-install.packages("stats")
-library(stats)
-library(highcharter) 
-
-
-
-
+### active energy - high chart
 class(ActivePower_wh_ts_month)
 class(Final_forecast_ARIMA_ActivePower_wh_month)
-
 Final_forecast_ARIMA_ActivePower_wh_month$mean
-
 
 forecast_ActivePower_ts <- ts(Final_forecast_ARIMA_ActivePower_wh_month$mean, frequency = 12, start = c(2010,11))
 comb_activepower<-ts.union(forecast_ActivePower_ts,ActivePower_wh_ts_month)
@@ -1746,12 +1739,27 @@ highchart (type = "stock") %>%
   hc_add_series(active_power_final)%>%
   hc_add_series(Final_forecast_ARIMA_ActivePower_wh_month)
 
+### reactive energy - high chart 
+class(ReactivePower_wh_ts_month)
+class(Final_forecast_ARIMA_ReactivePower_wh_month)
+Final_forecast_ARIMA_ReactivePower_wh_month$mean
+
+forecast_ReactivePower_ts <- ts(Final_forecast_ARIMA_ReactivePower_wh_month$mean, frequency = 12, start = c(2010,11))
+comb_reactivepower <- ts.union(forecast_ReactivePower_ts, ReactivePower_wh_ts_month)
+comb_reactivepower
+reactive_power_final <- pmin(comb_reactivepower[,1], comb_reactivepower[,2], na.rm = TRUE)
+reactive_power_final
+
+highchart (type = "stock") %>%
+  hc_add_series(reactive_power_final)%>%
+  hc_add_series(Final_forecast_ARIMA_ReactivePower_wh_month)
 
 
+#### BD. Shiny #### 
 
 ui <- dashboardPage(
   dashboardHeader(
-    title = "Energy Consumption - Dashboard Example", titleWidth = 450, 
+    title = "Energy Consumption - Dashboard (wip)", titleWidth = 450, 
                   dropdownMenu(type = "messages",
                         messageItem(
                         from = "Customer support",
@@ -1799,11 +1807,11 @@ ui <- dashboardPage(
     tabItems(
       # First tab content
       tabItem(tabName = "forecast",
-              h2("Forecast of energy consumption over 12 months"),
+              h2("Forecast of energy consumption"),
               fluidRow(
                 column(width = 12,
-                box(status = "primary", height = 300, width = 600, 
-                    highchartOutput("autoplot_reactive", height = 250, width = 650))))),
+                box(status = "primary", height = 500, width = 1000, 
+                    highchartOutput("highchart_reactive", height = 450, width = 950))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
@@ -1840,15 +1848,13 @@ server <- function(input, output) {
   
   
   ## outputs
-  output$autoplot_reactive <- renderHighchart({
+  output$highchart_reactive <- renderHighchart({
   if(input$"list_energy_type"=="Active"){highchart (type = "stock") %>%
                                           hc_add_series(active_power_final)%>%
                                           hc_add_series(Final_forecast_ARIMA_ActivePower_wh_month)}
-  else{autoplot(Final_forecast_ARIMA_ReactivePower_wh_month, 
-                xlab = NULL, 
-                ylab = NULL,
-                PI = FALSE)+
-                ggtitle("EVOLUTION OF REACTIVE ENERGY CONSUMPTION")}
+  else{highchart (type = "stock") %>%
+      hc_add_series(reactive_power_final)%>%
+      hc_add_series(Final_forecast_ARIMA_ReactivePower_wh_month)}
     })
   
   output$Consumption_year <- renderHighchart({ 
