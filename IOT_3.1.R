@@ -1740,6 +1740,19 @@ PowerConsumption_Season_year_ts <- ts(PowerConsumption_Season_year, frequency=1,
 colnames(PowerConsumption_Season_year_ts)
 PowerConsumption_Season_year_ts[,"Global_reactive_power_wh"]
 
+### Power consumption day of the week - time series
+PowerConsumption_Day_of_week
+class(PowerConsumption_Day_of_week)
+PowerConsumption_Day_of_week_ts <- ts(PowerConsumption_Day_of_week, frequency=1, start=1)
+colnames(PowerConsumption_Day_of_week_ts)
+PowerConsumption_Day_of_week_ts[,"Global_reactive_power_wh"]
+
+### Power consumption hour of the day - time series
+PowerConsumption_Hour
+class(PowerConsumption_Hour)
+PowerConsumption_Hour_ts <- ts(PowerConsumption_Hour, frequency=1, start=0)
+colnames(PowerConsumption_Hour_ts)
+PowerConsumption_Hour_ts[,"Global_reactive_power_wh"]
 
 
 
@@ -1850,7 +1863,7 @@ ui <- dashboardPage(
                 tabPanel("Year", "Consumption by year", highchartOutput("Consumption_year")),
                 tabPanel("Season", "Consumption by season of the year", highchartOutput("Consumption_season")),
                 tabPanel("Month", "Consumption by month",highchartOutput("Consumption_month")),
-                tabPanel("Day", "Consumption by day of the week", highchart("Consumption_dayweek")),
+                tabPanel("Day", "Consumption by day of the week", highchartOutput("Consumption_dayweek")),
                 tabPanel("Hour", "Consumption by hour of the day", highchartOutput("Consumption_hour"))))))))
 
 server <- function(input, output) {
@@ -1859,8 +1872,8 @@ server <- function(input, output) {
   dt_year <- reactive({PowerConsumption_Year_ts[,input$select_type_energy]})
   dt_month <- reactive({PowerConsumption_Month_2_ts[,input$select_type_energy]})
   dt_season <- reactive({PowerConsumption_Season_year_ts[,input$select_type_energy]})
-  dt_dayweek <- reactive({PowerConsumption_Day_of_week %>% select(Day_of_week,input$select_type_energy)})
-  dt_hour <- reactive({PowerConsumption_Hour %>% select(Hour,input$select_type_energy)})
+  dt_dayweek <- reactive({PowerConsumption_Day_of_week_ts[,input$select_type_energy]})
+  dt_hour <- reactive({PowerConsumption_Hour_ts[,input$select_type_energy]})
   dt_breakdown <- reactive({PowerConsumption_Month %>% filter(Year==input$select_year, Month==input$select_month)})
   #dt_month_pie <- reactive({PowerConsumption_Month %>% select(input$select_month,input$select_year, Global_active_power_wh, Global_reactive_power_wh)})
   
@@ -1893,14 +1906,14 @@ server <- function(input, output) {
     hchart(plot_season)
   })
   
-  output$Consumption_dayweek <- renderPlot({ 
+  output$Consumption_dayweek <- renderHighchart({ 
     plot_dayweek <- dt_dayweek()
-    plot(plot_dayweek)
+    hchart(plot_dayweek)
   })
   
-  output$Consumption_hour <- renderPlot({ 
-    plot_hour <- dt_dayweek()
-    plot(plot_hour)
+  output$Consumption_hour <- renderHighchart({ 
+    plot_hour <- dt_hour()
+    hchart(plot_hour)
   })
   
    # output$piechart_energy <- renderPlot({
