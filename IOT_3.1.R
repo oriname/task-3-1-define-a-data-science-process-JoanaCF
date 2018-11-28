@@ -359,6 +359,8 @@ PowerConsumption_Year <- PowerConsumption_c %>%
   group_by(Year) %>%
   summarise(Global_power_wh = sum(Global_power_wh), Global_reactive_power_wh=sum(Global_reactive_power), Global_active_power_wh=sum(Global_active_power), Global_Sub_meter=sum(Global_Sub_metering), Sub_metering_1=sum(Sub_metering_1), Sub_metering_2=sum(Sub_metering_2), Sub_metering_3=sum(Sub_metering_3))
 summary(PowerConsumption_Year)
+View(PowerConsumption_Year)
+summary(PowerConsumption_c)
 
 #qplot(PowerConsumption_Year$Year, PowerConsumption_Year$Global_power_wh, color="orange")
 #qplot(PowerConsumption_Year$Year, PowerConsumption_Year$Global_active_power_wh, col="orange")
@@ -1535,11 +1537,13 @@ accuracy(Forecast_train_ARIMA_ActivePower_wh_month,ActivePower_wh_month_testing,
 
 #### Z. Applying the best model to the whole dataset // active energy ####
 autoplot(ActivePower_wh_month)
-ActivePower_wh_ts_month
+
 ARIMA_ActivePower_wh_month<-arima(ActivePower_wh_ts_month, order = c(0,0,0), seasonal=list(order=c(1,1,0)))
 forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
 Final_forecast_ARIMA_ActivePower_wh_month <-forecast:::forecast.Arima(ARIMA_ActivePower_wh_month, h=14)
 autoplot(Final_forecast_ARIMA_ActivePower_wh_month)
+
+
 Final_forecast_ARIMA_ActivePower_wh_month
 
 ###################### ATTEMPT 5 - GLOBAL REACTIVE ENERGY // TRAINING AND TESTING SETS #####################
@@ -1713,6 +1717,28 @@ summary(PowerConsumption_Month_2)
 
 
 #### BD. Shiny #### 
+
+
+PowerConsumption_Year_ts <- ts(PowerConsumption_Year,frequency=1,start=2006)
+str(PowerConsumption_Year_ts)
+colnames(PowerConsumption_Year_ts)
+PowerConsumption_Year_ts[,"Global_power_wh"]
+
+PowerConsumption_Month
+
+
+install.packages("highcharter")
+library(highcharter) 
+
+
+highchart (type = "stock") %>%
+hc_add_series(ActivePower_wh_ts_month)%>%
+hc_add_series (Final_forecast_ARIMA_ActivePower_wh_month)
+
+
+
+
+
 ui <- dashboardPage(
   dashboardHeader(
     title = "Energy Consumption - Dashboard Example", titleWidth = 450, 
@@ -1743,7 +1769,7 @@ ui <- dashboardPage(
                      selectInput("select_year",
                                  label = "Year", 
                                  choices = list("2006" = "2006","2007" = "2007","2008" = "2008","2009" = "2009","2010" = "2010"),
-                                 selected = "2006"),
+                                 selected = "2007"),
                      selectInput("select_month",
                                  label = "Month", 
                                  choices = list("Jan" = "1", "Fev" = "2","Mar" = "3", "Apr" = "4","May" = "5","Jun" = "6","Jul" = "7","Ago" = "8","Sep" = "9","Oct" = "10","Nov" = "11","Dec" = "12"),
@@ -1784,7 +1810,7 @@ ui <- dashboardPage(
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
                 id = "tabset1", 
                 height = "300px", width = "400px",
-                tabPanel("Year", "Consumption by month", plotOutput("Consumption_year")),
+                tabPanel("Year", "Consumption by month", highchartOutput("Consumption_year")),
                 tabPanel("Season", "Consumption by season of the year", plotOutput("Consumption_season")),
                 tabPanel("Month", "Consumption by month",plotOutput("Consumption_month")),
                 tabPanel("Day", "Consumption by day of the week", plotOutput("Consumption_dayweek")),
@@ -1793,12 +1819,15 @@ ui <- dashboardPage(
 server <- function(input, output) {
   
   ## datasets
-  dt_year <- reactive({PowerConsumption_Year %>% select(Year,input$select_type_energy)})
+  dt_year <- reactive({PowerConsumption_Year_ts[,input$select_type_energy]})
   dt_month <- reactive({PowerConsumption_Month_2 %>% select(Month,input$select_type_energy)})
   dt_season <- reactive({PowerConsumption_Season_year %>% select(Season_of_year,input$select_type_energy)})
   dt_dayweek <- reactive({PowerConsumption_Day_of_week %>% select(Day_of_week,input$select_type_energy)})
   dt_hour <- reactive({PowerConsumption_Hour %>% select(Hour,input$select_type_energy)})
+  dt_breakdown <- reactive({PowerConsumption_Month %>% filter(Year==input$select_year, Month==input$select_month)})
+  
   #dt_month_pie <- reactive({PowerConsumption_Month %>% select(input$select_month,input$select_year, Global_active_power_wh, Global_reactive_power_wh)})
+  
   
   ## outputs
   output$autoplot_reactive <- renderPlot({
@@ -1814,11 +1843,11 @@ server <- function(input, output) {
                 ggtitle("EVOLUTION OF REACTIVE ENERGY CONSUMPTION")}
     })
   
-  output$Consumption_year <- renderPlot({ 
-    plot_year <- dt_year()
-    plot(plot_year)
+  output$Consumption_year <- renderHighchart({ 
+      plot_year <- dt_year()
+      hchart(plot_year)
     })
-
+  
   output$Consumption_month <- renderPlot({ 
     plot_month <- dt_month()
     plot(plot_month)
@@ -1854,7 +1883,9 @@ server <- function(input, output) {
     valueBox("200","Total Energy consumed (wh)", color = "purple")
       })
     output$Active_energy_consumed<- renderValueBox({  
-    valueBox("180","Active Energy consumed (wh)", color = "yellow")
+      valueBox_breakdown <- dt_breakdown()
+    valueBox(
+      round(valueBox_breakdown$Global_active_power_wh), "Active Energy consumed (wh)" , color = "yellow")
       })
     output$Reactive_energy_consumed<- renderValueBox({
       valueBox("20","Reactive Energy consumed (wh)", color = "red")
@@ -1862,3 +1893,4 @@ server <- function(input, output) {
 }
 
 shinyApp(ui,server)
+
