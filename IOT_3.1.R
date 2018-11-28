@@ -1754,8 +1754,6 @@ PowerConsumption_Hour_ts <- ts(PowerConsumption_Hour, frequency=1, start=0)
 colnames(PowerConsumption_Hour_ts)
 PowerConsumption_Hour_ts[,"Global_reactive_power_wh"]
 
-
-
 ### active energy - high chart
 class(ActivePower_wh_ts_month)
 class(Final_forecast_ARIMA_ActivePower_wh_month)
@@ -1842,7 +1840,7 @@ ui <- dashboardPage(
                 column(width = 12,
                 box(status = "primary", height = 500, width = 1000, 
                     highchartOutput("highchart_reactive", height = 400, width = 980),
-                    "INSIGHTS: Active energy consumption is expected to follow same seasonality seen before. Next high pick is January 2011. It will then decrease until August 2011 by more than a half.
+                    "Summary: Active energy consumption is expected to follow same seasonality seen before. Next high pick is January 2011. It will then decrease until August 2011 by more than a half.
                     Reactive energy consumption's high pick is July 2011, although lower than the previous year.")))),
     # second tab content
       tabItem(tabName = "breakdown", 
@@ -1860,11 +1858,11 @@ ui <- dashboardPage(
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
                 id = "tabset1", 
                 height = 500, width = 1000,
-                tabPanel("Year", "Consumption by year", highchartOutput("Consumption_year")),
-                tabPanel("Season", "Consumption by season of the year", highchartOutput("Consumption_season")),
-                tabPanel("Month", "Consumption by month",highchartOutput("Consumption_month")),
-                tabPanel("Day", "Consumption by day of the week", highchartOutput("Consumption_dayweek")),
-                tabPanel("Hour", "Consumption by hour of the day", highchartOutput("Consumption_hour"))))))))
+                tabPanel("Year", highchartOutput("Consumption_year")),
+                tabPanel("Season", highchartOutput("Consumption_season")),
+                tabPanel("Month", highchartOutput("Consumption_month")),
+                tabPanel("Day", highchartOutput("Consumption_dayweek")),
+                tabPanel("Hour", highchartOutput("Consumption_hour"))))))))
 
 server <- function(input, output) {
   
@@ -1893,27 +1891,37 @@ server <- function(input, output) {
   
   output$Consumption_year <- renderHighchart({ 
       plot_year <- dt_year()
-      hchart(plot_year)
+      highchart() %>%
+        hc_title(text = "Sum of energy consumption by year (wh)") %>%
+        hc_add_series(name="Energy consumed by year",data=plot_year, type = "column", color = "blue")
     })
   
   output$Consumption_month <- renderHighchart({ 
     plot_month <- dt_month()
-    hchart(plot_month)
+    highchart() %>%
+      hc_title(text = "Sum of energy consumption by month (wh)") %>%
+      hc_add_series(name="Energy consumed by month",data=plot_month, type = "column", color = "red")
   })
 
   output$Consumption_season <- renderHighchart({ 
     plot_season <- dt_season()
-    hchart(plot_season)
+    highchart() %>%
+      hc_title(text = "Sum of energy consumption by season of the year (wh)") %>%
+      hc_add_series(name="Energy consumed by season of the year",data=plot_season, type = "column", color = "green")
   })
   
   output$Consumption_dayweek <- renderHighchart({ 
     plot_dayweek <- dt_dayweek()
-    hchart(plot_dayweek)
+    highchart() %>%
+      hc_title(text = "Sum of energy consumption by day of the week (wh)") %>%
+      hc_add_series(name="Energy consumed by day of the week",data=plot_dayweek, type = "column", color = "orange")
   })
   
   output$Consumption_hour <- renderHighchart({ 
     plot_hour <- dt_hour()
-    hchart(plot_hour)
+    highchart() %>%
+    hc_title(text = "Sum of energy consumption per hour (wh)") %>%
+      hc_add_series(name="Energy consumed by hour",data=plot_hour, type = "column", color = "purple")
   })
   
    # output$piechart_energy <- renderPlot({
