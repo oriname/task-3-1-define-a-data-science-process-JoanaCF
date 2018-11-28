@@ -1701,7 +1701,8 @@ library(shiny)
 library(shinythemes)
 library(stats)
 library(highcharter) 
-
+install.packages("reshape2")
+library(reshape2)
 
 #### BC. Pre-processing ####
 
@@ -1789,6 +1790,14 @@ highchart() %>%
 
 PowerConsumption_Year%>% select(Year,Global_power_wh)
 
+### melt
+View(PowerConsumption_Month)
+Prev_melt<-PowerConsumption_Month %>% select(Year,Month, Global_reactive_power_wh, Sub_metering_1, Sub_metering_2, Sub_metering_3)
+Prev_melt<- melt(Prev_melt, id.vars=c("Month", "Year"),variable.name="variables", value.name = "values")
+melted_ex <- Prev_melt %>% filter(Year==2007, Month==1)
+highchart() %>% hc_chart(type="pie") %>% hc_add_series_labels_values(labels=melted_ex$variables, values=melted_ex$values)
+
+
 #### BD. Shiny #### 
 
 ui <- dashboardPage(skin = "purple",
@@ -1834,7 +1843,8 @@ ui <- dashboardPage(skin = "purple",
                                                          "Reactive energy (wh)" = "Global_reactive_power_wh",
                                                          "Sub-meter 1 (wh)" = "Sub_metering_1",
                                                          "Sub-meter 2 (wh)" = "Sub_metering_2",
-                                                         "Sub-meter 3 (wh)" = "Sub_metering_3"),                                                         
+                                                         "Sub-meter 3 (wh)" = "Sub_metering_3",
+                                                         "Total energy (wh)" = "Global_power_wh"),                                                         
                                                           selected = "Sub_metering_1")))
     ),
   dashboardBody(
@@ -1875,13 +1885,13 @@ ui <- dashboardPage(skin = "purple",
 server <- function(input, output) {
   
   ## datasets
-  dt_year <- reactive({PowerConsumption_Year %>% select(Year,input$select_type_energy)})
+  dt_year <- reactive({PowerConsumption_Year_ts[,input$select_type_energy]})
   dt_month <- reactive({PowerConsumption_Month_2_ts[,input$select_type_energy]})
   dt_season <- reactive({PowerConsumption_Season_year_ts[,input$select_type_energy]})
   dt_dayweek <- reactive({PowerConsumption_Day_of_week_ts[,input$select_type_energy]})
   dt_hour <- reactive({PowerConsumption_Hour_ts[,input$select_type_energy]})
   dt_breakdown <- reactive({PowerConsumption_Month %>% filter(Year==input$select_year, Month==input$select_month)})
-  dt_breakdown_2 <- reactive({PowerConsumption_Month %>% filter(Year==input$select_year, Month==input$select_month)})  
+  dt_pie <- reactive({Prev_melt %>% filter(Year==input$select_year, Month==input$select_month)})
   
   ## outputs
   output$highchart_reactive <- renderHighchart({
@@ -1896,13 +1906,13 @@ server <- function(input, output) {
       hc_add_series(Final_forecast_ARIMA_ReactivePower_wh_month)}
     })
   
-  output$Consumption_year <- renderHighchart({
-      plot_year <- dt_year()
-      highchart() %>%
-        hc_title(text = "Sum of energy consumption by year (wh)") %>%
-        hc_add_series(name="Energy consumed by year", data=plot_year, type = "column", color = "navy")
-    })
-  
+  output$Consumption_year <- renderHighchart({ 
+    plot_year <- dt_year()
+    highchart() %>%
+      hc_title(text = "Sum of energy consumption by year (wh)") %>%
+      hc_add_series(name="Energy consumed by year",data=plot_year, type = "column", color = "blue")
+  })
+      
   output$Consumption_month <- renderHighchart({ 
     plot_month <- dt_month()
     highchart() %>%
@@ -1932,10 +1942,9 @@ server <- function(input, output) {
   })
   
    output$tree_energy <- renderHighchart({
-     dt_treechart <- dt_breakdown()
-     highchart() %>%
-       hc_title(text = "Breakdown of energy consumption by type") %>%
-       hc_add_series(dt_treechart, type = "treemap", color = "purple")
+     dt_piechart <- dt_pie()
+     highchart() %>% hc_chart(type="pie") %>%
+      hc_add_series_labels_values(labels= dt_piechart$variables, values=dt_piechart$values)
   })
     
    output$Total_energy_consumed<- renderValueBox({ 
@@ -1977,4 +1986,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui,server)
-
