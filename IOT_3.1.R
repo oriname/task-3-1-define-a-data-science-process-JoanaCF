@@ -1723,18 +1723,28 @@ PowerConsumption_Year_ts <- ts(PowerConsumption_Year,frequency=1,start=2006)
 str(PowerConsumption_Year_ts)
 colnames(PowerConsumption_Year_ts)
 PowerConsumption_Year_ts[,"Global_power_wh"]
-
 PowerConsumption_Month
 
-
-install.packages("highcharter")
+install.packages("stats")
+library(stats)
 library(highcharter) 
 
 
-highchart (type = "stock") %>%
-hc_add_series(ActivePower_wh_ts_month)%>%
-hc_add_series (Final_forecast_ARIMA_ActivePower_wh_month)
 
+
+class(ActivePower_wh_ts_month)
+class(Final_forecast_ARIMA_ActivePower_wh_month)
+
+Final_forecast_ARIMA_ActivePower_wh_month$mean
+
+
+forecast_ActivePower_ts <- ts(Final_forecast_ARIMA_ActivePower_wh_month$mean, frequency = 12, start = c(2010,11))
+comb_activepower<-ts.union(forecast_ActivePower_ts,ActivePower_wh_ts_month)
+active_power_final<-pmin(comb_activepower[,1],comb_activepower[,2], na.rm = TRUE)
+
+highchart (type = "stock") %>%
+  hc_add_series(active_power_final)%>%
+  hc_add_series(Final_forecast_ARIMA_ActivePower_wh_month)
 
 
 
@@ -1793,7 +1803,7 @@ ui <- dashboardPage(
               fluidRow(
                 column(width = 12,
                 box(status = "primary", height = 300, width = 600, 
-                    plotOutput("autoplot_reactive", height = 250, width = 650))))),
+                    highchartOutput("autoplot_reactive", height = 250, width = 650))))),
     # second tab content
       tabItem(tabName = "breakdown", 
               h2("Breakdown of energy consumption"),
@@ -1830,12 +1840,10 @@ server <- function(input, output) {
   
   
   ## outputs
-  output$autoplot_reactive <- renderPlot({
-  if(input$"list_energy_type"=="Active"){autoplot(Final_forecast_ARIMA_ActivePower_wh_month, 
-                                                  xlab = NULL, 
-                                                  ylab = NULL,
-                                                  PI = FALSE) +
-                                                  ggtitle("EVOLUTION OF ACTIVE ENERGY CONSUMPTION")}
+  output$autoplot_reactive <- renderHighchart({
+  if(input$"list_energy_type"=="Active"){highchart (type = "stock") %>%
+                                          hc_add_series(active_power_final)%>%
+                                          hc_add_series(Final_forecast_ARIMA_ActivePower_wh_month)}
   else{autoplot(Final_forecast_ARIMA_ReactivePower_wh_month, 
                 xlab = NULL, 
                 ylab = NULL,
