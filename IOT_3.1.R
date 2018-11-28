@@ -1852,17 +1852,16 @@ ui <- dashboardPage(
                   box(plotOutput("piechart_energy")))),
       # third tab content 
       tabItem(tabName = "summary", 
-              h2("Analysis of energy consumption by period (dec 2006 - nov 2010"),
-              fluidRow(
+              h2("Analysis of energy consumption by period"),
               tabBox(
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
                 id = "tabset1", 
                 height = 500, width = 1000,
-                tabPanel("Year", highchartOutput("Consumption_year")),
-                tabPanel("Season", highchartOutput("Consumption_season")),
-                tabPanel("Month", highchartOutput("Consumption_month")),
-                tabPanel("Day", highchartOutput("Consumption_dayweek")),
-                tabPanel("Hour", highchartOutput("Consumption_hour"))))))))
+                tabPanel("Year", highchartOutput("Consumption_year", height = 400, width = 800)),
+                tabPanel("Season", highchartOutput("Consumption_season", height = 400, width = 800)),
+                tabPanel("Month", highchartOutput("Consumption_month", height = 400, width = 800)),
+                tabPanel("Day", highchartOutput("Consumption_dayweek", height = 400, width = 800)),
+                tabPanel("Hour", highchartOutput("Consumption_hour", height = 400, width = 800)))))))
 
 server <- function(input, output) {
   
