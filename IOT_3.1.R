@@ -1791,7 +1791,7 @@ PowerConsumption_Year%>% select(Year,Global_power_wh)
 
 #### BD. Shiny #### 
 
-ui <- dashboardPage(
+ui <- dashboardPage(skin = "purple",
   dashboardHeader(
     title = "Energy Consumption - Dashboard (wip)", titleWidth = 450, 
                   dropdownMenu(type = "messages",
@@ -1887,12 +1887,12 @@ server <- function(input, output) {
   output$highchart_reactive <- renderHighchart({
   if(input$"list_energy_type"=="Active"){highchart (type = "stock") %>%
                                           hc_title(text = "Active Power Consumption") %>%
-                                          hc_add_series(active_power_final)%>%
+                                          hc_add_series(active_power_final, color = "purple")%>%
                                           hc_add_series(Final_forecast_ARIMA_ActivePower_wh_month)
     }
   else{highchart (type = "stock") %>%
       hc_title(text = "Reactive Power Consumption") %>%
-      hc_add_series(reactive_power_final)%>%
+      hc_add_series(reactive_power_final, color = "orange")%>%
       hc_add_series(Final_forecast_ARIMA_ReactivePower_wh_month)}
     })
   
