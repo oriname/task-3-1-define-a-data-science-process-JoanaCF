@@ -1782,6 +1782,12 @@ highchart (type = "stock") %>%
   hc_add_series(reactive_power_final)%>%
   hc_add_series(Final_forecast_ARIMA_ReactivePower_wh_month)
 
+highchart() %>%
+  hc_title(text = "Sum of energy consumption by year (wh)") %>%
+  hc_add_series(name="Energy consumed by year",data=PowerConsumption_Year$Global_power_wh, type = "column", color = "blue") %>%
+  hc_xAxis(categories =as.numeric(PowerConsumption_Year$Year))
+
+PowerConsumption_Year%>% select(Year,Global_power_wh)
 
 #### BD. Shiny #### 
 
@@ -1849,7 +1855,10 @@ ui <- dashboardPage(
                   valueBoxOutput("Total_energy_consumed"),
                   valueBoxOutput("Active_energy_consumed"),
                   valueBoxOutput("Reactive_energy_consumed"),
-                  box(plotOutput("piechart_energy")))),
+                  valueBoxOutput("Total_cost"),
+                  valueBoxOutput("Active_cost"),
+                  valueBoxOutput("Reactive_cost"),
+                  box(highchartOutput("tree_energy")))),
       # third tab content 
       tabItem(tabName = "summary", 
               h2("Analysis of energy consumption by period"),
@@ -1857,23 +1866,22 @@ ui <- dashboardPage(
                 # The id lets us use input$tabset1 on the server to find the current tab - dont know what this means
                 id = "tabset1", 
                 height = 500, width = 1000,
-                tabPanel("Year", highchartOutput("Consumption_year", height = 400, width = 800)),
-                tabPanel("Season", highchartOutput("Consumption_season", height = 400, width = 800)),
-                tabPanel("Month", highchartOutput("Consumption_month", height = 400, width = 800)),
-                tabPanel("Day", highchartOutput("Consumption_dayweek", height = 400, width = 800)),
-                tabPanel("Hour", highchartOutput("Consumption_hour", height = 400, width = 800)))))))
+                tabPanel("Year", highchartOutput("Consumption_year", height = 450, width = 800)),
+                tabPanel("Season", highchartOutput("Consumption_season", height = 450, width = 800)),
+                tabPanel("Month", highchartOutput("Consumption_month", height = 450, width = 800)),
+                tabPanel("Day", highchartOutput("Consumption_dayweek", height = 450, width = 800)),
+                tabPanel("Hour", highchartOutput("Consumption_hour", height = 450, width = 800)))))))
 
 server <- function(input, output) {
   
   ## datasets
-  dt_year <- reactive({PowerConsumption_Year_ts[,input$select_type_energy]})
+  dt_year <- reactive({PowerConsumption_Year %>% select(Year,input$select_type_energy)})
   dt_month <- reactive({PowerConsumption_Month_2_ts[,input$select_type_energy]})
   dt_season <- reactive({PowerConsumption_Season_year_ts[,input$select_type_energy]})
   dt_dayweek <- reactive({PowerConsumption_Day_of_week_ts[,input$select_type_energy]})
   dt_hour <- reactive({PowerConsumption_Hour_ts[,input$select_type_energy]})
   dt_breakdown <- reactive({PowerConsumption_Month %>% filter(Year==input$select_year, Month==input$select_month)})
-  #dt_month_pie <- reactive({PowerConsumption_Month %>% select(input$select_month,input$select_year, Global_active_power_wh, Global_reactive_power_wh)})
-  
+  dt_breakdown_2 <- reactive({PowerConsumption_Month %>% filter(Year==input$select_year, Month==input$select_month)})  
   
   ## outputs
   output$highchart_reactive <- renderHighchart({
@@ -1888,25 +1896,25 @@ server <- function(input, output) {
       hc_add_series(Final_forecast_ARIMA_ReactivePower_wh_month)}
     })
   
-  output$Consumption_year <- renderHighchart({ 
+  output$Consumption_year <- renderHighchart({
       plot_year <- dt_year()
       highchart() %>%
         hc_title(text = "Sum of energy consumption by year (wh)") %>%
-        hc_add_series(name="Energy consumed by year",data=plot_year, type = "column", color = "blue")
+        hc_add_series(name="Energy consumed by year", data=plot_year, type = "column", color = "navy")
     })
   
   output$Consumption_month <- renderHighchart({ 
     plot_month <- dt_month()
     highchart() %>%
       hc_title(text = "Sum of energy consumption by month (wh)") %>%
-      hc_add_series(name="Energy consumed by month",data=plot_month, type = "column", color = "red")
+      hc_add_series(name="Energy consumed by month",data=plot_month, type = "column", color = "maroon")
   })
 
   output$Consumption_season <- renderHighchart({ 
     plot_season <- dt_season()
     highchart() %>%
       hc_title(text = "Sum of energy consumption by season of the year (wh)") %>%
-      hc_add_series(name="Energy consumed by season of the year",data=plot_season, type = "column", color = "green")
+      hc_add_series(name="Energy consumed by season of the year",data=plot_season, type = "column", color = "olive")
   })
   
   output$Consumption_dayweek <- renderHighchart({ 
@@ -1923,28 +1931,49 @@ server <- function(input, output) {
       hc_add_series(name="Energy consumed by hour",data=plot_hour, type = "column", color = "purple")
   })
   
-   # output$piechart_energy <- renderPlot({
-     # plot_piechart <- dt_month_pie()
-      #plot(plot_piechart)
-#  })
-
-  ## to be developed
-  # output$messageMenu <- renderMenu({})
-  # output$notificationMenu <- renderMenu({})
-  # output$tabset1 <- renderTable({XXX})
-  # output$tabset2 <- renderTable({XXX})
+   output$tree_energy <- renderHighchart({
+     dt_treechart <- dt_breakdown()
+     highchart() %>%
+       hc_title(text = "Breakdown of energy consumption by type") %>%
+       hc_add_series(dt_treechart, type = "treemap", color = "purple")
+  })
     
    output$Total_energy_consumed<- renderValueBox({ 
-    valueBox("200","Total Energy consumed (wh)", color = "purple")
+     valueBox_breakdown <- dt_breakdown()
+    valueBox(
+      round(valueBox_breakdown$Global_power_wh),"Total Energy consumed (wh)", color = "purple")
       })
+   
     output$Active_energy_consumed<- renderValueBox({  
       valueBox_breakdown <- dt_breakdown()
     valueBox(
-      round(valueBox_breakdown$Global_active_power_wh), "Active Energy consumed (wh)" , color = "yellow")
+      round(valueBox_breakdown$Global_active_power_wh),"Active Energy consumed (wh)", color = "orange")
       })
+    
     output$Reactive_energy_consumed<- renderValueBox({
-      valueBox("20","Reactive Energy consumed (wh)", color = "red")
+      valueBox_breakdown <- dt_breakdown()
+      valueBox(
+      round(valueBox_breakdown$Global_reactive_power_wh),"Reactive Energy consumed (wh)", color = "maroon")
     })
+    
+    output$Total_cost <- renderValueBox({
+      valueBox_breakdown <- dt_breakdown()
+    valueBox(
+      round((valueBox_breakdown$Global_active_power_wh*0.002)+(valueBox_breakdown$Global_reactive_power_wh*0.004)),"Cost of Energy consumed (euros)", color = "purple")
+    })
+    
+    output$Active_cost <- renderValueBox({
+      valueBox_breakdown <- dt_breakdown()
+      valueBox(
+        round(valueBox_breakdown$Global_active_power_wh*0.002),"Cost of Active Energy consumed (euros)", color = "orange")
+    })
+    
+    output$Reactive_cost <- renderValueBox({
+      valueBox_breakdown <- dt_breakdown()
+      valueBox(
+        round(valueBox_breakdown$Global_reactive_power_wh*0.004),"Cost of Reactive Energy consumed (euros)", color = "maroon")
+    })
+    
 }
 
 shinyApp(ui,server)
