@@ -27,7 +27,7 @@ library(tidyr)
 library(chron)
 
 #### 2. Upload dataset ####
-household_power_consumption <- read.csv("~/Desktop/UBIQUM/2. Tasks/Course 3/Task 1/Data/household_power_consumption.txt", 
+household_power_consumption <- read.csv("household_power_consumption.txt", 
                                         sep=";", dec = ".", na.strings = c("NA"," ","?"), stringsAsFactors = FALSE)
 #View(household_power_consumption)
 str(household_power_consumption)
